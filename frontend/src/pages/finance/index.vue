@@ -90,6 +90,11 @@ function onSearch(params: Record<string, unknown>) { filterParams.value = params
 function onPageChange(p: number) { page.value = p; loadList() }
 function onPageSizeChange(s: number) { pageSize.value = s; page.value = 1; loadList() }
 
+// ══ 结算详情 Modal ══
+const showDetailModal = ref(false)
+const detailRow = ref<FinanceRow | null>(null)
+function openDetail(row: FinanceRow) { detailRow.value = row; showDetailModal.value = true }
+
 onMounted(loadList)
 </script>
 
@@ -129,13 +134,48 @@ onMounted(loadList)
         <text class="td t-muted" style="flex:0.8">{{ row.period }}</text>
         <text class="td t-muted" style="flex:1.1">{{ row.settledAt || '—' }}</text>
         <view class="td action-btns" style="flex:1">
-          <view class="act-btn act-view">详情</view>
+          <view class="act-btn act-view" @click="openDetail(row)">详情</view>
           <view v-if="row._status === 1" class="act-btn act-edit" @click="handleSettle(row.id)">结算</view>
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"
         @page-change="onPageChange" @page-size-change="onPageSizeChange" />
     </view>
+
+    <!-- 结算详情 Modal -->
+    <!-- #ifdef H5 -->
+    <view v-if="showDetailModal && detailRow" class="modal-mask" @click.self="showDetailModal = false">
+      <view class="modal-box">
+        <view class="modal-header">
+          <text class="modal-title">结算详情</text>
+          <text class="modal-close" @click="showDetailModal = false">✕</text>
+        </view>
+        <view class="modal-body">
+          <view class="settle-amount-card">
+            <text class="sa-label">结算金额</text>
+            <text class="sa-amount">¥{{ detailRow.amount.toLocaleString() }}</text>
+          </view>
+          <view class="detail-grid">
+            <view class="dg-item"><text class="dg-label">结算ID</text><text class="dg-val">{{ detailRow.id }}</text></view>
+            <view class="dg-item"><text class="dg-label">所属联盟</text><text class="dg-val">{{ detailRow.orgName || '—' }}</text></view>
+            <view class="dg-item">
+              <text class="dg-label">结算状态</text>
+              <StatusBadge :status="statusCfg[detailRow._status as keyof typeof statusCfg]?.s || 'info'"
+                :label="statusCfg[detailRow._status as keyof typeof statusCfg]?.label || '未知'" />
+            </view>
+            <view class="dg-item"><text class="dg-label">结算周期</text><text class="dg-val">{{ detailRow.period }}</text></view>
+            <view class="dg-item"><text class="dg-label">创建时间</text><text class="dg-val">{{ detailRow.createdAt }}</text></view>
+            <view class="dg-item"><text class="dg-label">结算时间</text><text class="dg-val">{{ detailRow.settledAt || '—' }}</text></view>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <view class="m-btn m-btn-cancel" @click="showDetailModal = false">关闭</view>
+          <view v-if="detailRow._status === 1" class="m-btn m-btn-primary"
+            @click="() => { showDetailModal = false; handleSettle(detailRow!.id) }">立即结算</view>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
   </AppLayout>
 </template>
 
@@ -157,4 +197,21 @@ onMounted(loadList)
 .act-edit { background:#f0fdf4; color:#16a34a; }
 .empty-tip { text-align:center; padding:40px; color:var(--color-text-muted); font-size:13px; }
 .loading-tip { font-size:12px; color:var(--color-text-muted); }
+.modal-mask { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:300; display:flex; align-items:center; justify-content:center; }
+.modal-box { background:var(--color-card-bg); border-radius:16px; width:460px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.2); overflow:hidden; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid var(--color-border-light); }
+.modal-title { font-size:16px; font-weight:700; color:var(--color-text-primary); }
+.modal-close { font-size:18px; color:var(--color-text-muted); cursor:pointer; }
+.modal-body { padding:20px 24px; }
+.modal-footer { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid var(--color-border-light); }
+.m-btn { height:36px; border-radius:8px; font-size:13px; font-weight:500; display:flex; align-items:center; padding:0 20px; cursor:pointer; }
+.m-btn-cancel  { background:var(--color-border-light); color:var(--color-text-secondary); }
+.m-btn-primary { background:var(--color-primary); color:#fff; }
+.settle-amount-card { background:linear-gradient(135deg,var(--color-primary-dark),var(--color-primary)); border-radius:12px; padding:20px; text-align:center; margin-bottom:20px; }
+.sa-label  { font-size:12px; color:rgba(255,255,255,0.8); display:block; margin-bottom:4px; }
+.sa-amount { font-size:28px; font-weight:800; color:#fff; display:block; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.dg-item { display:flex; flex-direction:column; gap:4px; }
+.dg-label { font-size:11px; color:var(--color-text-muted); }
+.dg-val { font-size:13px; font-weight:500; color:var(--color-text-primary); }
 </style>
