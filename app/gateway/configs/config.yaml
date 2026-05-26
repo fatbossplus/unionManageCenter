@@ -1,0 +1,14 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: "123456"
+  dbname: union_manage
+
+jwt:
+  secret: "union-manage-secret-2026"
+  expire: 24

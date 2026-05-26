@@ -1,0 +1,13 @@
+go 1.25.1
+
+use (
+	./app/finance
+	./app/gateway
+	./app/message
+	./app/order
+	./app/org
+	./app/permission
+	./app/report
+	./app/user
+	./pkg
+)

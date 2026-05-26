@@ -1,0 +1,50 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": { "navigationBarTitleText": "登录" }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": { "navigationBarTitleText": "首页大屏" }
+    },
+    {
+      "path": "pages/users/index",
+      "style": { "navigationBarTitleText": "用户管理" }
+    },
+    {
+      "path": "pages/orgs/index",
+      "style": { "navigationBarTitleText": "联盟管理" }
+    },
+    {
+      "path": "pages/permissions/index",
+      "style": { "navigationBarTitleText": "权限配置" }
+    },
+    {
+      "path": "pages/orders/index",
+      "style": { "navigationBarTitleText": "订单中心" }
+    },
+    {
+      "path": "pages/finance/index",
+      "style": { "navigationBarTitleText": "财务结算" }
+    },
+    {
+      "path": "pages/reports/index",
+      "style": { "navigationBarTitleText": "数据报表" }
+    },
+    {
+      "path": "pages/messages/index",
+      "style": { "navigationBarTitleText": "消息通知" }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": { "navigationBarTitleText": "系统设置" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "联盟管理中心",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f0f4f8"
+  }
+}
