@@ -3,7 +3,7 @@
 -- Database: union_manage
 -- Charset: utf8mb4
 -- ============================================================
--- 导入前确保连接编码为 utf8mb4，避免中文注释乱码
+-- 必须在连接建立后立即设置编码，防止中文注释乱码
 SET NAMES utf8mb4;
 SET character_set_client     = utf8mb4;
 SET character_set_connection = utf8mb4;
@@ -16,13 +16,95 @@ CREATE DATABASE IF NOT EXISTS `union_manage`
 USE `union_manage`;
 
 -- ============================================================
--- RBAC: 用户表
+-- 后台管理员表（登录本系统的运营/管理人员）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `admins` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `username`      VARCHAR(64)  NOT NULL COMMENT '登录用户名',
+  `password`      VARCHAR(128) NOT NULL COMMENT '密码(bcrypt)',
+  `email`         VARCHAR(128) NULL DEFAULT NULL COMMENT '邮箱',
+  `phone`         VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '手机号',
+  `real_name`     VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '真实姓名',
+  `avatar`        VARCHAR(256) NOT NULL DEFAULT '' COMMENT '头像URL',
+  `role_id`       BIGINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '角色ID',
+  `status`        TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=正常,0=禁用',
+  `last_login_at` DATETIME     NULL COMMENT '最后登录时间',
+  `last_login_ip` VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '最后登录IP',
+  `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`    DATETIME     NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  UNIQUE KEY `uk_email` (`email`),
+  KEY `idx_role_id` (`role_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='后台管理员表';
+
+-- ============================================================
+-- 角色表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `name`        VARCHAR(64)  NOT NULL COMMENT '角色名称',
+  `code`        VARCHAR(64)  NOT NULL COMMENT '角色编码(唯一)',
+  `description` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '描述',
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
+  `sort`        INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`  DATETIME     NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_code` (`code`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+
+-- ============================================================
+-- 权限表（菜单/按钮/API 三合一）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `permissions` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `parent_id`   BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '父ID,0=顶级',
+  `name`        VARCHAR(64)  NOT NULL COMMENT '权限名称',
+  `code`        VARCHAR(128) NOT NULL COMMENT '权限编码',
+  `type`        TINYINT      NOT NULL DEFAULT 1 COMMENT '类型:1=菜单,2=按钮,3=API',
+  `path`        VARCHAR(256) NOT NULL DEFAULT '' COMMENT '路由路径(前端)/API路径(后端)',
+  `method`      VARCHAR(16)  NOT NULL DEFAULT '' COMMENT 'HTTP方法(GET/POST/PUT/DELETE)',
+  `icon`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '菜单图标',
+  `component`   VARCHAR(128) NOT NULL DEFAULT '' COMMENT '前端组件路径',
+  `sort`        INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  `visible`     TINYINT      NOT NULL DEFAULT 1 COMMENT '是否显示:1=显示,0=隐藏',
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
+  `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`  DATETIME     NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_parent_id` (`parent_id`),
+  KEY `idx_type` (`type`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
+
+-- ============================================================
+-- 角色-权限关联
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `role_permissions` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `role_id`       BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
+  `permission_id` BIGINT UNSIGNED NOT NULL COMMENT '权限ID',
+  `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_role_perm` (`role_id`, `permission_id`),
+  KEY `idx_permission_id` (`permission_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联';
+
+-- ============================================================
+-- 平台用户表（联盟普通用户，非后台管理员）
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `users` (
-  `id`           BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
   `username`     VARCHAR(64)  NOT NULL COMMENT '用户名',
   `password`     VARCHAR(128) NOT NULL COMMENT '密码(bcrypt)',
-  `email`        VARCHAR(128) NULL     DEFAULT NULL COMMENT '邮箱',
+  `email`        VARCHAR(128) NULL DEFAULT NULL COMMENT '邮箱',
   `phone`        VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '手机号',
   `real_name`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '真实姓名',
   `avatar`       VARCHAR(256) NOT NULL DEFAULT '' COMMENT '头像URL',
@@ -39,95 +121,26 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `uk_email` (`email`),
   KEY `idx_status` (`status`),
   KEY `idx_deleted_at` (`deleted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-
--- ============================================================
--- RBAC: 角色表
--- ============================================================
-CREATE TABLE IF NOT EXISTS `roles` (
-  `id`          BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name`        VARCHAR(64) NOT NULL COMMENT '角色名称',
-  `code`        VARCHAR(64) NOT NULL COMMENT '角色编码(唯一)',
-  `description` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '描述',
-  `status`      TINYINT     NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
-  `sort`        INT         NOT NULL DEFAULT 0 COMMENT '排序',
-  `created_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`  DATETIME    NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_code` (`code`),
-  KEY `idx_deleted_at` (`deleted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
-
--- ============================================================
--- RBAC: 权限表（菜单/按钮/API三合一）
--- ============================================================
-CREATE TABLE IF NOT EXISTS `permissions` (
-  `id`          BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `parent_id`   BIGINT      UNSIGNED NOT NULL DEFAULT 0 COMMENT '父ID,0=顶级',
-  `name`        VARCHAR(64) NOT NULL COMMENT '权限名称',
-  `code`        VARCHAR(128) NOT NULL COMMENT '权限编码',
-  `type`        TINYINT     NOT NULL DEFAULT 1 COMMENT '类型:1=菜单,2=按钮,3=API',
-  `path`        VARCHAR(256) NOT NULL DEFAULT '' COMMENT '路由路径(前端)/API路径(后端)',
-  `method`      VARCHAR(16) NOT NULL DEFAULT '' COMMENT 'HTTP方法(GET/POST/PUT/DELETE)',
-  `icon`        VARCHAR(64) NOT NULL DEFAULT '' COMMENT '菜单图标',
-  `component`   VARCHAR(128) NOT NULL DEFAULT '' COMMENT '前端组件路径',
-  `sort`        INT         NOT NULL DEFAULT 0 COMMENT '排序',
-  `visible`     TINYINT     NOT NULL DEFAULT 1 COMMENT '是否显示:1=显示,0=隐藏',
-  `status`      TINYINT     NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
-  `created_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`  DATETIME    NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_parent_id` (`parent_id`),
-  KEY `idx_type` (`type`),
-  KEY `idx_deleted_at` (`deleted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
-
--- ============================================================
--- RBAC: 用户-角色关联
--- ============================================================
-CREATE TABLE IF NOT EXISTS `user_roles` (
-  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id`    BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `role_id`    BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_role` (`user_id`, `role_id`),
-  KEY `idx_role_id` (`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联';
-
--- ============================================================
--- RBAC: 角色-权限关联
--- ============================================================
-CREATE TABLE IF NOT EXISTS `role_permissions` (
-  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `role_id`       BIGINT UNSIGNED NOT NULL COMMENT '角色ID',
-  `permission_id` BIGINT UNSIGNED NOT NULL COMMENT '权限ID',
-  `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_role_perm` (`role_id`, `permission_id`),
-  KEY `idx_permission_id` (`permission_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台用户表';
 
 -- ============================================================
 -- 联盟表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `orgs` (
-  `id`           BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name`         VARCHAR(128) NOT NULL COMMENT '联盟名称',
-  `type`         VARCHAR(32) NOT NULL DEFAULT 'ec' COMMENT '类型:ec=电商,service=服务,content=内容,other=其他',
-  `description`  TEXT COMMENT '联盟简介',
-  `logo`         VARCHAR(256) NOT NULL DEFAULT '' COMMENT 'Logo URL',
-  `region`       VARCHAR(64) NOT NULL DEFAULT '' COMMENT '所在地区',
-  `leader_id`    BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '负责人用户ID',
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `name`          VARCHAR(128) NOT NULL COMMENT '联盟名称',
+  `type`          VARCHAR(32)  NOT NULL DEFAULT 'ec' COMMENT '类型:ec=电商,service=服务,content=内容,other=其他',
+  `description`   TEXT COMMENT '联盟简介',
+  `logo`          VARCHAR(256) NOT NULL DEFAULT '' COMMENT 'Logo URL',
+  `region`        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '所在地区',
+  `leader_id`     BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '负责人用户ID',
   `contact_email` VARCHAR(128) NOT NULL DEFAULT '' COMMENT '联系邮箱',
   `contact_phone` VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '联系电话',
-  `status`       TINYINT     NOT NULL DEFAULT 2 COMMENT '状态:1=正常,2=待审核,3=已冻结',
-  `member_count` INT         NOT NULL DEFAULT 0 COMMENT '成员数量(冗余)',
-  `created_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`   DATETIME    NULL,
+  `status`        TINYINT      NOT NULL DEFAULT 2 COMMENT '状态:1=正常,2=待审核,3=已冻结',
+  `member_count`  INT          NOT NULL DEFAULT 0 COMMENT '成员数量(冗余)',
+  `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`    DATETIME     NULL COMMENT '软删除时间',
   PRIMARY KEY (`id`),
   KEY `idx_type` (`type`),
   KEY `idx_status` (`status`),
@@ -145,8 +158,8 @@ CREATE TABLE IF NOT EXISTS `org_members` (
   `role`       VARCHAR(32) NOT NULL DEFAULT 'member' COMMENT '联盟内角色:owner/admin/member',
   `status`     TINYINT     NOT NULL DEFAULT 1 COMMENT '状态:1=正常,0=退出',
   `joined_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
-  `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_org_user` (`org_id`, `user_id`),
   KEY `idx_user_id` (`user_id`),
@@ -157,21 +170,21 @@ CREATE TABLE IF NOT EXISTS `org_members` (
 -- 订单表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `orders` (
-  `id`           BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT,
-  `order_no`     VARCHAR(64) NOT NULL COMMENT '订单号(唯一)',
-  `type`         VARCHAR(32) NOT NULL DEFAULT 'normal' COMMENT '类型:normal=普通,refund=退款',
-  `status`       TINYINT     NOT NULL DEFAULT 1 COMMENT '状态:1=待支付,2=已支付,3=已退款,4=已取消',
-  `pay_method`   VARCHAR(32) NOT NULL DEFAULT '' COMMENT '支付方式:wx/ali/bank',
-  `amount`       DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT '订单金额(元)',
-  `user_id`      BIGINT UNSIGNED NOT NULL COMMENT '下单用户ID',
-  `org_id`       BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '所属联盟ID',
-  `remark`       VARCHAR(256) NOT NULL DEFAULT '' COMMENT '备注',
-  `paid_at`      DATETIME    NULL COMMENT '支付时间',
-  `refunded_at`  DATETIME    NULL COMMENT '退款时间',
-  `refund_reason` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '退款原因',
-  `created_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`   DATETIME    NULL,
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `order_no`      VARCHAR(64)   NOT NULL COMMENT '订单号(唯一)',
+  `type`          VARCHAR(32)   NOT NULL DEFAULT 'normal' COMMENT '类型:normal=普通,refund=退款',
+  `status`        TINYINT       NOT NULL DEFAULT 1 COMMENT '状态:1=待支付,2=已支付,3=已退款,4=已取消',
+  `pay_method`    VARCHAR(32)   NOT NULL DEFAULT '' COMMENT '支付方式:wx/ali/bank',
+  `amount`        DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT '订单金额(元)',
+  `user_id`       BIGINT UNSIGNED NOT NULL COMMENT '下单用户ID',
+  `org_id`        BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '所属联盟ID',
+  `remark`        VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '备注',
+  `paid_at`       DATETIME      NULL COMMENT '支付时间',
+  `refunded_at`   DATETIME      NULL COMMENT '退款时间',
+  `refund_reason` VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '退款原因',
+  `created_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`    DATETIME      NULL COMMENT '软删除时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_order_no` (`order_no`),
   KEY `idx_user_id` (`user_id`),
@@ -187,15 +200,15 @@ CREATE TABLE IF NOT EXISTS `orders` (
 CREATE TABLE IF NOT EXISTS `finance_accounts` (
   `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `org_id`       BIGINT UNSIGNED NOT NULL COMMENT '联盟ID',
-  `type`         VARCHAR(32) NOT NULL DEFAULT 'bank' COMMENT '账户类型:bank=银行卡,ali=支付宝,wx=微信',
+  `type`         VARCHAR(32)  NOT NULL DEFAULT 'bank' COMMENT '账户类型:bank=银行卡,ali=支付宝,wx=微信',
   `account_name` VARCHAR(128) NOT NULL COMMENT '账户名',
   `account_no`   VARCHAR(128) NOT NULL COMMENT '账号',
   `bank_name`    VARCHAR(128) NOT NULL DEFAULT '' COMMENT '开户行',
-  `is_default`   TINYINT     NOT NULL DEFAULT 0 COMMENT '是否默认:1=是',
-  `status`       TINYINT     NOT NULL DEFAULT 1 COMMENT '状态:1=正常,0=禁用',
-  `created_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`   DATETIME    NULL,
+  `is_default`   TINYINT      NOT NULL DEFAULT 0 COMMENT '是否默认:1=是',
+  `status`       TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=正常,0=禁用',
+  `created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`   DATETIME     NULL COMMENT '软删除时间',
   PRIMARY KEY (`id`),
   KEY `idx_org_id` (`org_id`),
   KEY `idx_deleted_at` (`deleted_at`)
@@ -205,9 +218,9 @@ CREATE TABLE IF NOT EXISTS `finance_accounts` (
 -- 财务结算表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `finance_settlements` (
-  `id`           BIGINT        UNSIGNED NOT NULL AUTO_INCREMENT,
-  `org_id`       BIGINT        UNSIGNED NOT NULL COMMENT '联盟ID',
-  `account_id`   BIGINT        UNSIGNED NOT NULL DEFAULT 0 COMMENT '收款账户ID',
+  `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `org_id`       BIGINT UNSIGNED NOT NULL COMMENT '联盟ID',
+  `account_id`   BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '收款账户ID',
   `amount`       DECIMAL(12,2) NOT NULL DEFAULT 0.00 COMMENT '结算金额(元)',
   `status`       TINYINT       NOT NULL DEFAULT 1 COMMENT '状态:1=待结算,2=结算中,3=已结算,4=失败',
   `period`       VARCHAR(32)   NOT NULL DEFAULT 'monthly' COMMENT '结算周期:daily/weekly/monthly',
@@ -215,10 +228,10 @@ CREATE TABLE IF NOT EXISTS `finance_settlements` (
   `period_end`   DATE          NOT NULL COMMENT '结算周期止',
   `remark`       VARCHAR(256)  NOT NULL DEFAULT '' COMMENT '备注',
   `settled_at`   DATETIME      NULL COMMENT '实际结算时间',
-  `operator_id`  BIGINT        UNSIGNED NOT NULL DEFAULT 0 COMMENT '操作人ID',
-  `created_at`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `deleted_at`   DATETIME      NULL,
+  `operator_id`  BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '操作人ID',
+  `created_at`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at`   DATETIME      NULL COMMENT '软删除时间',
   PRIMARY KEY (`id`),
   KEY `idx_org_id` (`org_id`),
   KEY `idx_status` (`status`),
@@ -230,16 +243,16 @@ CREATE TABLE IF NOT EXISTS `finance_settlements` (
 -- 消息通知表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `messages` (
-  `id`         BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id`    BIGINT      UNSIGNED NOT NULL DEFAULT 0 COMMENT '接收用户ID,0=全体',
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id`    BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '接收用户ID,0=全体',
   `title`      VARCHAR(128) NOT NULL COMMENT '消息标题',
-  `content`    TEXT        NOT NULL COMMENT '消息内容',
-  `type`       VARCHAR(32) NOT NULL DEFAULT 'system' COMMENT '类型:system/order/finance/security',
-  `is_read`    TINYINT     NOT NULL DEFAULT 0 COMMENT '是否已读:0=未读,1=已读',
-  `ref_id`     BIGINT      UNSIGNED NOT NULL DEFAULT 0 COMMENT '关联业务ID',
-  `ref_type`   VARCHAR(32) NOT NULL DEFAULT '' COMMENT '关联业务类型',
-  `created_at` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `read_at`    DATETIME    NULL COMMENT '阅读时间',
+  `content`    TEXT         NOT NULL COMMENT '消息内容',
+  `type`       VARCHAR(32)  NOT NULL DEFAULT 'system' COMMENT '类型:system/order/finance/security',
+  `is_read`    TINYINT      NOT NULL DEFAULT 0 COMMENT '是否已读:0=未读,1=已读',
+  `ref_id`     BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '关联业务ID',
+  `ref_type`   VARCHAR(32)  NOT NULL DEFAULT '' COMMENT '关联业务类型',
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `read_at`    DATETIME     NULL COMMENT '阅读时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_is_read` (`is_read`),
@@ -251,13 +264,13 @@ CREATE TABLE IF NOT EXISTS `messages` (
 -- 数据字典类型表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `dict_types` (
-  `id`          INT         UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name`        VARCHAR(64) NOT NULL COMMENT '类型名称',
-  `code`        VARCHAR(64) NOT NULL COMMENT '类型编码(唯一)',
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(64)  NOT NULL COMMENT '类型名称',
+  `code`        VARCHAR(64)  NOT NULL COMMENT '类型编码(唯一)',
   `description` VARCHAR(256) NOT NULL DEFAULT '' COMMENT '描述',
-  `status`      TINYINT     NOT NULL DEFAULT 1,
-  `created_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
+  `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据字典类型';
@@ -266,14 +279,14 @@ CREATE TABLE IF NOT EXISTS `dict_types` (
 -- 数据字典项表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `dict_items` (
-  `id`          INT         UNSIGNED NOT NULL AUTO_INCREMENT,
-  `type_id`     INT         UNSIGNED NOT NULL COMMENT '字典类型ID',
-  `label`       VARCHAR(128) NOT NULL COMMENT '显示名称',
-  `value`       VARCHAR(128) NOT NULL COMMENT '字典值',
-  `sort`        INT         NOT NULL DEFAULT 0 COMMENT '排序',
-  `status`      TINYINT     NOT NULL DEFAULT 1,
-  `created_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type_id`    INT UNSIGNED NOT NULL COMMENT '字典类型ID',
+  `label`      VARCHAR(128) NOT NULL COMMENT '显示名称',
+  `value`      VARCHAR(128) NOT NULL COMMENT '字典值',
+  `sort`       INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  `status`     TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1=启用,0=禁用',
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `idx_type_id` (`type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据字典项';
@@ -282,17 +295,17 @@ CREATE TABLE IF NOT EXISTS `dict_items` (
 -- 操作日志表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `operation_logs` (
-  `id`          BIGINT      UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id`     BIGINT      UNSIGNED NOT NULL DEFAULT 0 COMMENT '操作用户ID',
-  `username`    VARCHAR(64) NOT NULL DEFAULT '' COMMENT '操作用户名(冗余)',
-  `action`      VARCHAR(64) NOT NULL COMMENT '操作动作(create/update/delete/login等)',
-  `resource`    VARCHAR(64) NOT NULL DEFAULT '' COMMENT '资源类型',
-  `resource_id` BIGINT      UNSIGNED NOT NULL DEFAULT 0 COMMENT '资源ID',
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id`     BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '操作用户ID',
+  `username`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '操作用户名(冗余)',
+  `action`      VARCHAR(64)  NOT NULL COMMENT '操作动作(create/update/delete/login等)',
+  `resource`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '资源类型',
+  `resource_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '资源ID',
   `detail`      TEXT COMMENT '操作详情(JSON)',
-  `ip`          VARCHAR(64) NOT NULL DEFAULT '' COMMENT '操作IP',
+  `ip`          VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '操作IP',
   `user_agent`  VARCHAR(256) NOT NULL DEFAULT '' COMMENT 'UA',
-  `status`      TINYINT     NOT NULL DEFAULT 1 COMMENT '1=成功,0=失败',
-  `created_at`  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '1=成功,0=失败',
+  `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_action` (`action`),
@@ -300,75 +313,59 @@ CREATE TABLE IF NOT EXISTS `operation_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志';
 
 -- ============================================================
--- 初始化数据
+-- 初始化种子数据
 -- ============================================================
 
--- 超级管理员角色
+-- 角色
 INSERT INTO `roles` (`id`, `name`, `code`, `description`, `status`, `sort`) VALUES
-(1, '超级管理员', 'superadmin', '拥有所有权限', 1, 0),
+(1, '超级管理员', 'superadmin', '拥有所有权限',         1, 0),
 (2, '联盟管理员', 'org_admin',  '管理本联盟内所有资源', 1, 1),
-(3, '财务人员',   'finance',    '查看和处理财务结算', 1, 2),
-(4, '普通会员',   'member',     '基础功能访问', 1, 3);
+(3, '财务人员',   'finance',    '查看和处理财务结算',   1, 2),
+(4, '运营人员',   'operator',   '日常运营操作',         1, 3);
 
--- 超级管理员用户 (密码: admin123)
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `real_name`, `status`, `cert_status`) VALUES
-(1, 'admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin@union.com', '超级管理员', 1, 2);
-
--- 超级管理员绑定角色
-INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES (1, 1);
+-- 后台管理员（密码: admin123）
+INSERT INTO `admins` (`id`, `username`, `password`, `email`, `real_name`, `role_id`, `status`) VALUES
+(1, 'admin', '$2a$10$ow4orOc2sKz2DhStnPcILuorhEcGB3CpEkkb9p0PW5jKhltrRTj0S', 'admin@union.com', '超级管理员', 1, 1);
 
 -- 菜单权限树
 INSERT INTO `permissions` (`id`, `parent_id`, `name`, `code`, `type`, `path`, `icon`, `sort`, `visible`) VALUES
 -- 一级菜单
-(1,  0, '首页大屏',   'dashboard',         1, '/pages/dashboard/index',   '🏠', 0, 1),
-(2,  0, '用户管理',   'user',              1, '/pages/users/index',        '👥', 1, 1),
-(3,  0, '联盟管理',   'org',               1, '/pages/orgs/index',         '🏢', 2, 1),
-(4,  0, '权限配置',   'permission',        1, '/pages/permissions/index',  '🔐', 3, 1),
-(5,  0, '订单中心',   'order',             1, '/pages/orders/index',       '📦', 4, 1),
-(6,  0, '财务结算',   'finance',           1, '/pages/finance/index',      '💰', 5, 1),
-(7,  0, '数据报表',   'report',            1, '/pages/reports/index',      '📊', 6, 1),
-(8,  0, '消息通知',   'message',           1, '/pages/messages/index',     '💬', 7, 1),
-(9,  0, '系统设置',   'settings',          1, '/pages/settings/index',     '⚙️', 8, 1),
+(1,  0, '首页大屏', 'dashboard',   1, '/pages/dashboard/index',  '🏠', 0, 1),
+(2,  0, '用户管理', 'user',        1, '/pages/users/index',       '👥', 1, 1),
+(3,  0, '联盟管理', 'org',         1, '/pages/orgs/index',        '🏢', 2, 1),
+(4,  0, '权限配置', 'permission',  1, '/pages/permissions/index', '🔐', 3, 1),
+(5,  0, '订单中心', 'order',       1, '/pages/orders/index',      '📦', 4, 1),
+(6,  0, '财务结算', 'finance',     1, '/pages/finance/index',     '💰', 5, 1),
+(7,  0, '数据报表', 'report',      1, '/pages/reports/index',     '📊', 6, 1),
+(8,  0, '消息通知', 'message',     1, '/pages/messages/index',    '💬', 7, 1),
+(9,  0, '系统设置', 'settings',    1, '/pages/settings/index',    '⚙️', 8, 1),
 -- 按钮权限
-(10, 2, '用户新增',   'user:create',       2, '', '', 0, 0),
-(11, 2, '用户编辑',   'user:update',       2, '', '', 1, 0),
-(12, 2, '用户删除',   'user:delete',       2, '', '', 2, 0),
-(13, 2, '用户导出',   'user:export',       2, '', '', 3, 0),
-(14, 3, '联盟新增',   'org:create',        2, '', '', 0, 0),
-(15, 3, '联盟编辑',   'org:update',        2, '', '', 1, 0),
-(16, 3, '联盟删除',   'org:delete',        2, '', '', 2, 0),
-(17, 5, '订单退款',   'order:refund',      2, '', '', 0, 0),
-(18, 6, '发起结算',   'finance:settle',    2, '', '', 0, 0),
--- API权限
-(20, 2, '用户列表API',    'api:user:list',     3, '/api/v1/users',           'GET',    0, 0),
-(21, 2, '用户详情API',    'api:user:detail',   3, '/api/v1/users/:id',       'GET',    1, 0),
-(22, 2, '用户创建API',    'api:user:create',   3, '/api/v1/users',           'POST',   2, 0),
-(23, 2, '用户更新API',    'api:user:update',   3, '/api/v1/users/:id',       'PUT',    3, 0),
-(24, 2, '用户删除API',    'api:user:delete',   3, '/api/v1/users/:id',       'DELETE', 4, 0),
-(25, 3, '联盟列表API',    'api:org:list',      3, '/api/v1/orgs',            'GET',    0, 0),
-(26, 3, '联盟详情API',    'api:org:detail',    3, '/api/v1/orgs/:id',        'GET',    1, 0),
-(27, 3, '联盟创建API',    'api:org:create',    3, '/api/v1/orgs',            'POST',   2, 0),
-(28, 3, '联盟更新API',    'api:org:update',    3, '/api/v1/orgs/:id',        'PUT',    3, 0),
-(29, 5, '订单列表API',    'api:order:list',    3, '/api/v1/orders',          'GET',    0, 0),
-(30, 6, '结算列表API',    'api:finance:list',  3, '/api/v1/finance',         'GET',    0, 0);
+(10, 2, '用户新增', 'user:create', 2, '', '', 0, 0),
+(11, 2, '用户编辑', 'user:update', 2, '', '', 1, 0),
+(12, 2, '用户删除', 'user:delete', 2, '', '', 2, 0),
+(14, 3, '联盟新增', 'org:create',  2, '', '', 0, 0),
+(15, 3, '联盟编辑', 'org:update',  2, '', '', 1, 0),
+(16, 3, '联盟删除', 'org:delete',  2, '', '', 2, 0),
+(17, 5, '订单退款', 'order:refund',2, '', '', 0, 0),
+(18, 6, '发起结算', 'finance:settle',2,'','', 0, 0);
 
 -- 超级管理员拥有所有权限
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT 1, id FROM `permissions`;
 
--- 数据字典初始化
+-- 数据字典
 INSERT INTO `dict_types` (`name`, `code`, `description`) VALUES
-('用户状态',    'user_status',    '用户账号状态'),
-('联盟类型',    'org_type',       '联盟分类'),
-('订单状态',    'order_status',   '订单状态枚举'),
-('支付方式',    'pay_method',     '支付渠道'),
-('结算状态',    'settle_status',  '财务结算状态'),
-('结算周期',    'settle_period',  '财务结算周期');
+('用户状态',  'user_status',   '用户账号状态'),
+('联盟类型',  'org_type',      '联盟分类'),
+('订单状态',  'order_status',  '订单状态枚举'),
+('支付方式',  'pay_method',    '支付渠道'),
+('结算状态',  'settle_status', '财务结算状态'),
+('结算周期',  'settle_period', '财务结算周期');
 
 INSERT INTO `dict_items` (`type_id`, `label`, `value`, `sort`) VALUES
 (1, '正常',   '1', 0), (1, '待审核', '2', 1), (1, '已禁用', '3', 2),
 (2, '电商联盟', 'ec', 0), (2, '服务联盟', 'service', 1), (2, '内容联盟', 'content', 2), (2, '其他', 'other', 3),
 (3, '待支付', '1', 0), (3, '已支付', '2', 1), (3, '已退款', '3', 2), (3, '已取消', '4', 3),
 (4, '微信支付', 'wx', 0), (4, '支付宝', 'ali', 1), (4, '银行卡', 'bank', 2),
-(5, '待结算', '1', 0), (5, '结算中', '2', 1), (5, '已结算', '3', 2), (5, '失败', '4', 3),
+(5, '待结算', '1', 0), (5, '结算中', '2', 1), (5, '已结算', '3', 2), (5, '失败',   '4', 3),
 (6, '日结', 'daily', 0), (6, '周结', 'weekly', 1), (6, '月结', 'monthly', 2);

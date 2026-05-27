@@ -2,6 +2,24 @@ package model
 
 import "time"
 
+// Admin 后台管理员（登录本管理系统的运营/管理人员）
+type Admin struct {
+	Base
+	Username    string     `gorm:"uniqueIndex;size:64"  json:"username"`
+	Password    string     `gorm:"size:128"             json:"-"`
+	Email       *string    `gorm:"uniqueIndex;size:128" json:"email"`
+	Phone       string     `gorm:"size:20"              json:"phone"`
+	RealName    string     `gorm:"size:64"              json:"real_name"`
+	Avatar      string     `gorm:"size:256"             json:"avatar"`
+	RoleID      uint64     `gorm:"default:1"            json:"role_id"`
+	Status      int8       `gorm:"default:1"            json:"status"`
+	LastLoginAt *time.Time `                            json:"last_login_at"`
+	LastLoginIP string     `gorm:"size:64"              json:"last_login_ip"`
+}
+
+func (Admin) TableName() string { return "admins" }
+
+// User 平台普通用户（联盟成员，非管理员）
 type User struct {
 	Base
 	Username    string     `gorm:"uniqueIndex;size:64"   json:"username"`
@@ -49,15 +67,6 @@ type Permission struct {
 }
 
 func (Permission) TableName() string { return "permissions" }
-
-type UserRole struct {
-	ID        uint64    `gorm:"primaryKey;autoIncrement"`
-	UserID    uint64    `gorm:"index"`
-	RoleID    uint64    `gorm:"index"`
-	CreatedAt time.Time
-}
-
-func (UserRole) TableName() string { return "user_roles" }
 
 type RolePermission struct {
 	RoleID       uint64 `gorm:"primaryKey;column:role_id"`

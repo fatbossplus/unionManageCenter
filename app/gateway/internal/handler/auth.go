@@ -24,58 +24,61 @@ type loginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// Login 后台管理员登录，查 admins 表
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, 400, "参数错误: "+err.Error())
 		return
 	}
-	var user model.User
-	if err := h.db.Where("username = ? AND deleted_at IS NULL", req.Username).First(&user).Error; err != nil {
+	var admin model.Admin
+	if err := h.db.Where("username = ? AND deleted_at IS NULL", req.Username).First(&admin).Error; err != nil {
 		response.Fail(c, 400, "账号或密码错误")
 		return
 	}
-	if user.Status == 3 {
+	if admin.Status == 0 {
 		response.Fail(c, 403, "账号已禁用")
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(req.Password)); err != nil {
 		response.Fail(c, 400, "账号或密码错误")
 		return
 	}
 
-	var userRoles []model.UserRole
-	h.db.Where("user_id = ?", user.ID).Find(&userRoles)
-	roleCode := "member"
-	if len(userRoles) > 0 {
-		var role model.Role
-		if h.db.First(&role, userRoles[0].RoleID).Error == nil {
-			roleCode = role.Code
-		}
+	// 获取角色编码
+	var role model.Role
+	roleCode := "operator"
+	if h.db.First(&role, admin.RoleID).Error == nil {
+		roleCode = role.Code
 	}
 
 	now := time.Now()
-	h.db.Model(&user).Updates(map[string]any{
+	h.db.Model(&admin).Updates(map[string]any{
 		"last_login_at": now,
 		"last_login_ip": c.ClientIP(),
 	})
 
-	token, _ := auth.GenerateToken(user.ID, user.Username, roleCode)
+	email := ""
+	if admin.Email != nil {
+		email = *admin.Email
+	}
+	token, _ := auth.GenerateToken(admin.ID, admin.Username, roleCode)
 	response.OK(c, gin.H{
 		"token": token,
 		"user": gin.H{
-			"id":        user.ID,
-			"username":  user.Username,
-			"email":     func() string { if user.Email != nil { return *user.Email }; return "" }(),
-			"real_name": user.RealName,
-			"avatar":    user.Avatar,
+			"id":        admin.ID,
+			"username":  admin.Username,
+			"email":     email,
+			"real_name": admin.RealName,
+			"avatar":    admin.Avatar,
 			"role":      roleCode,
 		},
 	})
 }
 
+// Menus 根据管理员角色返回菜单树
 func (h *AuthHandler) Menus(c *gin.Context) {
-	userID := middleware.GetUserID(c)
+	adminID := middleware.GetUserID(c)
 	roleCode := middleware.GetRoleCode(c)
 
 	var perms []model.Permission
@@ -83,10 +86,14 @@ func (h *AuthHandler) Menus(c *gin.Context) {
 		h.db.Where("type = 1 AND status = 1 AND deleted_at IS NULL").
 			Order("sort ASC").Find(&perms)
 	} else {
+		var admin model.Admin
+		if h.db.First(&admin, adminID).Error != nil {
+			response.Fail(c, 401, "管理员不存在")
+			return
+		}
 		h.db.Table("permissions p").
 			Joins("JOIN role_permissions rp ON rp.permission_id = p.id").
-			Joins("JOIN user_roles ur ON ur.role_id = rp.role_id").
-			Where("ur.user_id = ? AND p.type = 1 AND p.status = 1 AND p.deleted_at IS NULL", userID).
+			Where("rp.role_id = ? AND p.type = 1 AND p.status = 1 AND p.deleted_at IS NULL", admin.RoleID).
 			Order("p.sort ASC").Find(&perms)
 	}
 

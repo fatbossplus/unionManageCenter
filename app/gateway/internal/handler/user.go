@@ -126,9 +126,6 @@ func (h *UserHandler) Create(c *gin.Context) {
 		response.Fail(c, 500, "创建失败: "+err.Error())
 		return
 	}
-	if req.RoleID > 0 {
-		h.db.Create(&model.UserRole{UserID: user.ID, RoleID: req.RoleID})
-	}
 	response.OK(c, user)
 }
 
