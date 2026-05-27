@@ -5,6 +5,7 @@ import KpiCard from '@/components/common/KpiCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { get, post, put, del } from '@/api/request'
 import { useUserStore } from '@/stores/user'
+import IconBtn from '@/components/common/IconBtn.vue'
 
 const userStore = useUserStore()
 
@@ -179,10 +180,10 @@ onMounted(loadData)
             <StatusBadge :status="role.status===1?'success':'danger'" :label="role.status===1?'启用':'禁用'" />
           </view>
           <view class="td action-btns" style="flex:1.5">
-            <view v-if="userStore.hasPermission('permission')" class="act-btn act-view" @click="openPermConfig(role)">配置权限</view>
-            <view v-if="userStore.hasPermission('permission')" class="act-btn act-edit" @click="openEditRole(role)">编辑</view>
-            <view v-if="userStore.hasPermission('permission')" class="act-btn act-danger" @click="deleteRole(role)">删除</view>
-            <view v-if="!userStore.hasPermission('permission')" class="t-muted" style="font-size:12px">只读</view>
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="🔐" tip="配置权限" type="team"   @click="openPermConfig(role)" />
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="✏️" tip="编辑角色" type="edit"    @click="openEditRole(role)" />
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="🗑"  tip="删除角色" type="danger" @click="deleteRole(role)" />
+            <text v-if="!userStore.hasPermission('permission')" class="t-muted" style="font-size:12px">只读</text>
           </view>
         </view>
       </view>
@@ -292,7 +293,7 @@ onMounted(loadData)
 .t-btn-sm { height:28px; border-radius:6px; font-size:12px; padding:0 12px; cursor:pointer; background:var(--color-border-light); color:var(--color-text-secondary); display:flex; align-items:center; }
 .t-head { display:flex; padding:10px 16px; background:var(--color-border-light); border-bottom:1px solid var(--color-border); }
 .th { font-size:12px; font-weight:600; color:var(--color-text-secondary); padding-right:8px; }
-.t-row { display:flex; align-items:center; padding:11px 16px; border-bottom:1px solid var(--color-border-light); &:hover{background:var(--color-border-light);} }
+.t-row { display:flex; align-items:center; padding:11px 16px; border-bottom:1px solid var(--color-border-light); overflow:visible; &:hover{background:var(--color-border-light);} }
 .td { font-size:13px; color:var(--color-text-primary); padding-right:8px; }
 .t-muted { font-size:12px; color:var(--color-text-muted); }
 .mono { font-family:monospace; }

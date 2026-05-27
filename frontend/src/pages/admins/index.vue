@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import IconBtn from '@/components/common/IconBtn.vue'
 import { get, post, put, del } from '@/api/request'
 import { useUserStore } from '@/stores/user'
 
@@ -189,9 +190,9 @@ onMounted(() => { loadList(); loadRoles() })
           </view>
           <view class="td" style="flex:1">
             <view class="action-btns">
-              <view v-if="userStore.hasPermission('admin:update')" class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
-              <view v-if="userStore.hasPermission('admin:update')" class="act-btn act-reset" @click.stop="openReset(row)">重置密码</view>
-              <view class="act-btn act-more" @click.stop="(e)=>openMoreMenu(e as MouseEvent, row)">···</view>
+              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="✏️" tip="编辑管理员" type="edit" @click="openEdit(row)" />
+              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="🔑" tip="重置密码" type="key" @click="openReset(row)" />
+              <IconBtn icon="⋯" tip="更多操作" type="default" @click="(e:any)=>openMoreMenu(e as MouseEvent, row)" />
             </view>
           </view>
         </view>
@@ -309,11 +310,11 @@ onMounted(() => { loadList(); loadRoles() })
 .tb-search { height: 36px; border: 1.5px solid var(--color-border); border-radius: 8px; padding: 0 12px; font-size: 13px; width: 220px; background: var(--color-card-bg); color: var(--color-text-primary); }
 .tb-btn { height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; background: var(--color-border-light); color: var(--color-text-secondary); }
 .tb-btn-primary { background: var(--color-primary); color: #fff; }
-.table-card { padding: 0; }
+.table-card { padding: 0; overflow: visible; position: relative; }
 .table-wrap { overflow-x: auto; }
 .tr { display: flex; align-items: center; border-bottom: 1px solid var(--color-border-light); padding: 0 20px; }
 .th-row { background: var(--color-border-light); font-weight: 600; }
-.th, .td { padding: 12px 8px; font-size: 13px; color: var(--color-text-primary); overflow: hidden; }
+.th, .td { padding: 12px 8px; font-size: 13px; color: var(--color-text-primary); overflow: visible; }
 .th { font-size: 12px; color: var(--color-text-secondary); }
 .t-muted { color: var(--color-text-muted); font-size: 12px; }
 .admin-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; flex-shrink: 0; margin-right: 8px; }

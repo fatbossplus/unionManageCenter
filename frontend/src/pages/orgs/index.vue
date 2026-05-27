@@ -9,6 +9,7 @@ import { getOrgList, createOrg, updateOrg, deleteOrg, type OrgItem } from '@/api
 import { get, post, put, del } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
+import IconBtn from '@/components/common/IconBtn.vue'
 
 const userStore = useUserStore()
 
@@ -298,9 +299,10 @@ onMounted(loadList)
           <text class="td t-muted" style="flex:0.8">{{ row.leader || '—' }}</text>
           <text class="td t-muted" style="flex:1">{{ row.createdAt.slice(0,10) }}</text>
           <view class="td action-btns" style="flex:1.3">
-            <view class="act-btn act-view" @click.stop="openMembers(row)">成员</view>
-            <view class="act-btn act-team" @click.stop="openTeam(row)">权限班子</view>
-            <view class="act-btn act-more" @click.stop="(e) => openMoreMenu(e as MouseEvent, row)">···</view>
+            <IconBtn icon="👥" tip="成员管理" type="view"    @click="openMembers(row)" />
+            <IconBtn icon="🔐" tip="权限班子" type="team"    @click="openTeam(row)" />
+            <IconBtn v-if="userStore.hasPermission('org:update')" icon="✏️" tip="编辑联盟" type="edit" @click="openEdit(row)" />
+            <IconBtn icon="⋯"  tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
           </view>
         </view>
         <view v-if="!list.length && !loading" class="table-empty">暂无数据</view>
@@ -399,7 +401,7 @@ onMounted(loadList)
               <text class="t-muted" style="flex:1">{{ m.role || '成员' }}</text>
               <text class="t-muted" style="flex:1">{{ m.created_at?.slice(0,10) || '—' }}</text>
               <view style="flex:0.8">
-                <view class="act-btn act-danger" @click="removeMember(m.user_id || m.id)">移除</view>
+                <IconBtn icon="✕" tip="移除成员" type="danger" size="sm" @click="removeMember(m.user_id || m.id)" />
               </view>
             </view>
             <view v-if="!members.length" class="table-empty" style="padding:20px">暂无成员</view>
@@ -492,8 +494,8 @@ onMounted(loadList)
                 <text class="t-muted" style="flex:1.5">{{ m.remark || '—' }}</text>
                 <!-- 操作 -->
                 <view style="flex:0.8">
-                  <view v-if="userStore.hasPermission('org:update')"
-                        class="act-btn act-danger" @click="removeTeamMember(m)">移除</view>
+                  <IconBtn v-if="userStore.hasPermission('org:update')"
+                    icon="✕" tip="移除班子成员" type="danger" size="sm" @click="removeTeamMember(m)" />
                 </view>
               </view>
             </view>
@@ -519,7 +521,7 @@ onMounted(loadList)
 
 <style lang="scss" scoped>
 .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
-.table-card { overflow: visible; }
+.table-card { overflow: visible; position: relative; }
 .table-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
 .sel-info { font-size: 13px; color: var(--color-text-secondary); }
 .em { color: var(--color-primary); font-weight: 600; }

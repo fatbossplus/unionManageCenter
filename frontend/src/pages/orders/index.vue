@@ -5,6 +5,7 @@ import KpiCard from '@/components/common/KpiCard.vue'
 import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import IconBtn from '@/components/common/IconBtn.vue'
 import { getOrderList, refundOrder, type OrderItem } from '@/api/order'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
@@ -149,8 +150,8 @@ onMounted(loadList)
         <text class="td" style="flex:1.2"><text class="org-tag">{{ row.orgName }}</text></text>
         <text class="td t-muted" style="flex:1.2">{{ row.createdAt }}</text>
         <view class="td action-btns" style="flex:1">
-          <view class="act-btn act-view" @click="openDetail(row)">详情</view>
-          <view v-if="row._status === 2 && userStore.hasPermission('order:refund')" class="act-btn act-edit" @click="handleRefund(row.id)">退款</view>
+          <IconBtn icon="👁" tip="查看详情" type="view" @click="openDetail(row)" />
+          <IconBtn v-if="row._status === 2 && userStore.hasPermission('order:refund')" icon="↩" tip="申请退款" type="warn" @click="handleRefund(row.id)" />
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"
@@ -192,7 +193,7 @@ onMounted(loadList)
 
 <style lang="scss" scoped>
 .stats-row { display: grid; grid-template-columns: repeat(5,1fr); gap:12px; margin-bottom:16px; }
-.table-card { overflow: hidden; }
+.table-card { overflow: visible; position: relative; }
 .table-toolbar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; }
 .sel-info { font-size:13px; color:var(--color-text-secondary); }
 .em { color:var(--color-primary); font-weight:600; }

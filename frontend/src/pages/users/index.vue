@@ -5,6 +5,7 @@ import KpiCard from '@/components/common/KpiCard.vue'
 import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import IconBtn from '@/components/common/IconBtn.vue'
 import { getUserList, getUserDetail, createUser, updateUser, deleteUser, batchEnable, batchDisable, type UserItem } from '@/api/user'
 import { get, post } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
@@ -288,9 +289,9 @@ onMounted(loadList)
           <view class="td" style="flex:0.9"><text class="t-muted">{{ row.lastLoginAt !== '-' ? row.lastLoginAt.slice(0,10) : '—' }}</text></view>
           <view class="td" style="flex:1.2">
             <view class="action-btns">
-              <view class="act-btn act-view" @click.stop="openDetail(row.id)">详情</view>
-              <view v-if="userStore.hasPermission('user:update')" class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
-              <view class="act-btn act-more" @click.stop="(e) => openMoreMenu(e as MouseEvent, row)">···</view>
+              <IconBtn icon="👁" tip="查看详情" type="view" @click="openDetail(row.id)" />
+              <IconBtn v-if="userStore.hasPermission('user:update')" icon="✏️" tip="编辑" type="edit" @click="openEdit(row)" />
+              <IconBtn icon="⋯" tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
             </view>
           </view>
         </view>
