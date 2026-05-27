@@ -227,16 +227,16 @@ const rankHoverIdx = ref(-1)
 
     <!-- KPI 卡片 -->
     <view class="kpi-row" v-if="stats">
-      <KpiCard icon="👥" label="注册用户总数" :value="stats.totalUsers"
+      <KpiCard icon="group" label="注册用户总数" :value="stats.totalUsers"
         :trend="{ dir: 'up', text: '12.3% vs上月' }" icon-bg="#eff6ff"
         :sparkline="[40,55,48,70,62,85,78,100]" />
-      <KpiCard icon="🏢" label="活跃联盟数" :value="stats.activeOrgs"
+      <KpiCard icon="building" label="活跃联盟数" :value="stats.activeOrgs"
         :trend="{ dir: 'up', text: '5.1% vs上月' }" icon-bg="#f0fdf4"
         :sparkline="[50,45,65,60,75,70,90,85]" />
-      <KpiCard icon="💰" label="本月流水(元)" :value="stats.monthlyRevenue"
+      <KpiCard icon="money" label="本月流水(元)" :value="stats.monthlyRevenue"
         :trend="{ dir: 'up', text: '8.7% vs上月' }" icon-bg="#fff7ed"
         :sparkline="[30,50,45,65,75,70,90,100]" />
-      <KpiCard icon="📦" label="待处理订单" :value="stats.pendingOrders"
+      <KpiCard icon="order" label="待处理订单" :value="stats.pendingOrders"
         :trend="{ dir: 'down', text: '3单待跟进' }" icon-bg="#fef2f2"
         :sparkline="[80,90,70,60,50,55,40,35]" />
     </view>

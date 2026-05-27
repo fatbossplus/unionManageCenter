@@ -10,6 +10,7 @@ import { get, post, put, del } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 const userStore = useUserStore()
 
@@ -256,24 +257,24 @@ onMounted(loadList)
   <AppLayout :breadcrumbs="breadcrumbs">
     <!-- 统计栏 -->
     <view class="stats-row">
-      <KpiCard icon="🏢" label="联盟总数"  :value="pageStats.total"    :trend="{ dir:'up', text:'5.1%' }"    icon-bg="#eff6ff" />
-      <KpiCard icon="✅" label="正常运营"  :value="pageStats.active"   :trend="{ dir:'up', text:'本月+6' }"  icon-bg="#f0fdf4" />
-      <KpiCard icon="⏳" label="待审核"    :value="pageStats.pending"  :trend="{ dir:'up', text:'今日+3' }"  icon-bg="#fffbeb" />
-      <KpiCard icon="❄️" label="已冻结"    :value="pageStats.frozen"   :trend="{ dir:'down', text:'无变化' }" icon-bg="#fef2f2" />
-      <KpiCard icon="🆕" label="今日新增"  :value="pageStats.todayNew" :trend="{ dir:'up', text:'+3' }"      icon-bg="#faf5ff" />
+      <KpiCard icon="building" label="联盟总数"  :value="pageStats.total"    :trend="{ dir:'up', text:'5.1%' }"    icon-bg="#eff6ff" />
+      <KpiCard icon="check-circle" label="正常运营"  :value="pageStats.active"   :trend="{ dir:'up', text:'本月+6' }"  icon-bg="#f0fdf4" />
+      <KpiCard icon="clock" label="待审核"    :value="pageStats.pending"  :trend="{ dir:'up', text:'今日+3' }"  icon-bg="#fffbeb" />
+      <KpiCard icon="snowflake" label="已冻结"    :value="pageStats.frozen"   :trend="{ dir:'down', text:'无变化' }" icon-bg="#fef2f2" />
+      <KpiCard icon="new" label="今日新增"  :value="pageStats.todayNew" :trend="{ dir:'up', text:'+3' }"      icon-bg="#faf5ff" />
     </view>
 
     <FilterPanel :fields="filterFields" :quick-tags="quickTags"
       @search="onSearch" @reset="() => { filterParams.value = {}; loadList() }" @export="() => {}">
       <template #extra-actions>
-        <view v-if="userStore.hasPermission('org:create')" class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增联盟</view>
+        <view v-if="userStore.hasPermission('org:create')" class="fp-btn fp-btn-primary" @click="openCreate"><SvgIcon name="add" /> 新增联盟</view>
       </template>
     </FilterPanel>
 
     <view class="card table-card" @click="closeMoreMenu">
       <view class="table-toolbar">
         <text class="sel-info">共 <text class="em">{{ total }}</text> 条联盟</text>
-        <view class="icon-btn" @click="loadList">🔄</view>
+        <view class="icon-btn" @click="loadList"><SvgIcon name="refresh" /></view>
       </view>
       <view class="t-head">
         <text class="th" style="flex:2">联盟名称</text>
@@ -299,10 +300,10 @@ onMounted(loadList)
           <text class="td t-muted" style="flex:0.8">{{ row.leader || '—' }}</text>
           <text class="td t-muted" style="flex:1">{{ row.createdAt.slice(0,10) }}</text>
           <view class="td action-btns" style="flex:1.3">
-            <IconBtn icon="👥" tip="成员管理" type="view"    @click="openMembers(row)" />
-            <IconBtn icon="🔐" tip="权限班子" type="team"    @click="openTeam(row)" />
-            <IconBtn v-if="userStore.hasPermission('org:update')" icon="✏️" tip="编辑联盟" type="edit" @click="openEdit(row)" />
-            <IconBtn icon="⋯"  tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
+            <IconBtn icon="group" tip="成员管理" type="view"    @click="openMembers(row)" />
+            <IconBtn icon="lock" tip="权限班子" type="team"    @click="openTeam(row)" />
+            <IconBtn v-if="userStore.hasPermission('org:update')" icon="edit" tip="编辑联盟" type="edit" @click="openEdit(row)" />
+            <IconBtn icon="more"  tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
           </view>
         </view>
         <view v-if="!list.length && !loading" class="table-empty">暂无数据</view>
@@ -314,11 +315,11 @@ onMounted(loadList)
     <!-- 更多菜单 -->
     <!-- #ifdef H5 -->
     <view v-if="moreMenuRow" class="more-menu" :style="moreMenuStyle" @click.stop>
-      <view v-if="userStore.hasPermission('org:update')" class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()">✏️ 编辑联盟</view>
-      <view class="mm-item" @click="openMembers(moreMenuRow); closeMoreMenu()">👥 成员管理</view>
-      <view class="mm-item" @click="openTeam(moreMenuRow); closeMoreMenu()">🔐 权限班子</view>
+      <view v-if="userStore.hasPermission('org:update')" class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()"><SvgIcon name="edit" /> 编辑联盟</view>
+      <view class="mm-item" @click="openMembers(moreMenuRow); closeMoreMenu()"><SvgIcon name="group" /> 成员管理</view>
+      <view class="mm-item" @click="openTeam(moreMenuRow); closeMoreMenu()"><SvgIcon name="lock" /> 权限班子</view>
       <view class="mm-divider"/>
-      <view v-if="userStore.hasPermission('org:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除联盟</view>
+      <view v-if="userStore.hasPermission('org:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)"><SvgIcon name="delete" /> 删除联盟</view>
     </view>
 
     <!-- 新增/编辑 Modal -->
@@ -326,7 +327,7 @@ onMounted(loadList)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">{{ formMode==='create' ? '新增联盟' : '编辑联盟' }}</text>
-          <text class="modal-close" @click="showFormModal = false">✕</text>
+          <view class="modal-close" @click="showFormModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="form-row">
@@ -352,9 +353,9 @@ onMounted(loadList)
           <view class="form-row">
             <text class="form-label">状态</text>
             <view class="form-radio-group">
-              <view class="form-radio" :class="{ active: form.status===1 }" @click="form.status=1">✓ 正常</view>
-              <view class="form-radio" :class="{ active: form.status===2 }" @click="form.status=2">⏳ 待审核</view>
-              <view class="form-radio" :class="{ active: form.status===3 }" @click="form.status=3">❄️ 冻结</view>
+              <view class="form-radio" :class="{ active: form.status===1 }" @click="form.status=1"><SvgIcon name="check" /> 正常</view>
+              <view class="form-radio" :class="{ active: form.status===2 }" @click="form.status=2"><SvgIcon name="clock" /> 待审核</view>
+              <view class="form-radio" :class="{ active: form.status===3 }" @click="form.status=3"><SvgIcon name="snowflake" /> 冻结</view>
             </view>
           </view>
         </view>
@@ -372,7 +373,7 @@ onMounted(loadList)
       <view class="modal-box modal-lg">
         <view class="modal-header">
           <text class="modal-title">成员管理 · {{ memberOrg?.name }}</text>
-          <text class="modal-close" @click="showMembersModal = false">✕</text>
+          <view class="modal-close" @click="showMembersModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <!-- 添加成员 -->
@@ -383,7 +384,7 @@ onMounted(loadList)
               <option value="admin">管理员</option>
               <option value="finance">财务</option>
             </select>
-            <view class="m-btn m-btn-primary" style="white-space:nowrap" @click="addMember">＋ 添加</view>
+            <view class="m-btn m-btn-primary" style="white-space:nowrap" @click="addMember"><SvgIcon name="add" /> 添加</view>
           </view>
           <!-- 成员列表 -->
           <view v-if="memberLoading" class="table-empty">加载中...</view>
@@ -401,7 +402,7 @@ onMounted(loadList)
               <text class="t-muted" style="flex:1">{{ m.role || '成员' }}</text>
               <text class="t-muted" style="flex:1">{{ m.created_at?.slice(0,10) || '—' }}</text>
               <view style="flex:0.8">
-                <IconBtn icon="✕" tip="移除成员" type="danger" size="sm" @click="removeMember(m.user_id || m.id)" />
+                <IconBtn icon="close" tip="移除成员" type="danger" size="sm" @click="removeMember(m.user_id || m.id)" />
               </view>
             </view>
             <view v-if="!members.length" class="table-empty" style="padding:20px">暂无成员</view>
@@ -417,10 +418,10 @@ onMounted(loadList)
       <view class="modal-box modal-xl">
         <view class="modal-header">
           <view>
-            <text class="modal-title">🔐 权限班子 · {{ teamOrg?.name }}</text>
+            <text class="modal-title"><SvgIcon name="lock" /> 权限班子 · {{ teamOrg?.name }}</text>
             <text class="modal-sub">为该联盟指定专属管理员，班子成员可对本联盟进行操作管理</text>
           </view>
-          <text class="modal-close" @click="showTeamModal = false">✕</text>
+          <view class="modal-close" @click="showTeamModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
 
@@ -441,7 +442,8 @@ onMounted(loadList)
               </select>
               <input class="form-input" style="flex:1.5" v-model="addTeamRemark" placeholder="备注（选填）"/>
               <view class="m-btn m-btn-primary" :class="{loading: teamSaving}" @click="addTeamMember">
-                {{ teamSaving ? '添加中...' : '＋ 加入班子' }}
+                <SvgIcon v-if="!teamSaving" name="add" />
+                {{ teamSaving ? '添加中...' : '加入班子' }}
               </view>
             </view>
           </view>
@@ -450,7 +452,7 @@ onMounted(loadList)
           <view v-if="teamLoading" class="table-empty">加载中...</view>
           <view v-else>
             <view class="team-empty" v-if="!team.length">
-              <text class="team-empty-icon">👥</text>
+              <SvgIcon class="team-empty-icon" name="group" />
               <text class="team-empty-text">该联盟暂无权限班子，请添加管理员</text>
             </view>
             <view v-else>
@@ -495,7 +497,7 @@ onMounted(loadList)
                 <!-- 操作 -->
                 <view style="flex:0.8">
                   <IconBtn v-if="userStore.hasPermission('org:update')"
-                    icon="✕" tip="移除班子成员" type="danger" size="sm" @click="removeTeamMember(m)" />
+                    icon="close" tip="移除班子成员" type="danger" size="sm" @click="removeTeamMember(m)" />
                 </view>
               </view>
             </view>
@@ -503,7 +505,7 @@ onMounted(loadList)
 
           <!-- 权限说明 -->
           <view class="team-tips">
-            <text class="tips-title">📌 权限班子说明</text>
+            <text class="tips-title"><SvgIcon name="pin" /> 权限班子说明</text>
             <text class="tips-item">· 权限班子成员可对本联盟进行编辑、成员管理等操作，无需全局权限</text>
             <text class="tips-item">· 角色决定成员在本联盟内的权限范围（与全局RBAC角色定义一致）</text>
             <text class="tips-item">· superadmin 无需加入班子，默认拥有所有联盟的管理权限</text>

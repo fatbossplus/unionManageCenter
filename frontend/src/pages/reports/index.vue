@@ -23,10 +23,10 @@ const filterFields: FilterField[] = [
 ]
 
 const tabs = [
-  { key: 'user',    label: '👥 用户增长', color: '#3b82f6', color2: '#8b5cf6' },
-  { key: 'revenue', label: '💰 流水趋势', color: '#10b981', color2: '' },
-  { key: 'org',     label: '🏢 活跃用户', color: '#f59e0b', color2: '' },
-  { key: 'order',   label: '📦 订单统计', color: '#ef4444', color2: '' },
+  { key: 'user',    label: '用户增长', icon: 'group',    color: '#3b82f6', color2: '#8b5cf6' },
+  { key: 'revenue', label: '流水趋势', icon: 'money',    color: '#10b981', color2: '' },
+  { key: 'org',     label: '活跃用户', icon: 'building', color: '#f59e0b', color2: '' },
+  { key: 'order',   label: '订单统计', icon: 'order',    color: '#ef4444', color2: '' },
 ]
 
 interface SummaryStat { icon: string; label: string; value: number; trend: { dir: 'up'|'down'; text: string }; bg: string }
@@ -40,13 +40,13 @@ async function loadSummary() {
   try {
     const res: any = await get('/reports/summary')
     summaryStats.value = [
-      { icon:'👥', label:'本月新增用户', value: res.month_new_users ?? 0,
+      { icon:'group', label:'本月新增用户', value: res.month_new_users ?? 0,
         trend:{ dir:(res.trends?.users||'').startsWith('+')?'up':'down', text:res.trends?.users||'0%' }, bg:'#eff6ff' },
-      { icon:'💰', label:'本月总流水', value: res.month_revenue ?? 0,
+      { icon:'money', label:'本月总流水', value: res.month_revenue ?? 0,
         trend:{ dir:(res.trends?.revenue||'').startsWith('+')?'up':'down', text:res.trends?.revenue||'0%' }, bg:'#f0fdf4' },
-      { icon:'🏢', label:'活跃联盟数', value: res.active_orgs ?? 0,
+      { icon:'building', label:'活跃联盟数', value: res.active_orgs ?? 0,
         trend:{ dir:'up', text:'实时统计' }, bg:'#fff7ed' },
-      { icon:'📦', label:'本月订单数', value: res.month_orders ?? 0,
+      { icon:'order', label:'本月订单数', value: res.month_orders ?? 0,
         trend:{ dir:(res.trends?.orders||'').startsWith('+')?'up':'down', text:res.trends?.orders||'0%' }, bg:'#faf5ff' },
     ]
   } catch (e: any) {
@@ -179,7 +179,9 @@ function onReportMouseLeave() { rHoverIdx.value = -1 }
     <view class="card report-panel">
       <view class="report-tabs">
         <view v-for="t in tabs" :key="t.key" class="r-tab"
-          :class="{ active: activeTab === t.key }" @click="activeTab = t.key">{{ t.label }}</view>
+          :class="{ active: activeTab === t.key }" @click="activeTab = t.key">
+          <SvgIcon :name="t.icon" />{{ t.label }}
+        </view>
       </view>
       <!-- ══ 报表折线图 ══ -->
       <!-- #ifdef H5 -->
@@ -253,7 +255,7 @@ function onReportMouseLeave() { rHoverIdx.value = -1 }
 
         <!-- Hover 看板 -->
         <view v-if="rHoverIdx >= 0 && dailyRows[rHoverIdx]" class="r-tooltip" :style="rTooltipStyle">
-          <view class="tt-date">📅 {{ dailyRows[rHoverIdx].date }}</view>
+          <view class="tt-date"><SvgIcon name="calendar" /> {{ dailyRows[rHoverIdx].date }}</view>
           <template v-if="activeTab === 'user'">
             <view class="tt-row">
               <view class="tt-dot" :style="{background:activeTabCfg.color}"/>
@@ -314,7 +316,7 @@ function onReportMouseLeave() { rHoverIdx.value = -1 }
       <!-- #ifndef H5 -->
       <view class="chart-placeholder">
         <view class="chart-ph-inner">
-          <text class="chart-ph-icon">📊</text>
+          <SvgIcon class="chart-ph-icon" name="chart" />
           <text class="chart-ph-text">{{ tabs.find(t=>t.key===activeTab)?.label }} 趋势图</text>
           <text class="chart-ph-sub">图表仅支持 H5 平台</text>
         </view>

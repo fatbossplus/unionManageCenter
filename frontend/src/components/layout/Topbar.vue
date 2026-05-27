@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import type { ThemeKey } from '@/stores/theme'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 defineProps<{
   breadcrumbs: { label: string; path?: string }[]
@@ -43,7 +44,7 @@ const themes: { key: ThemeKey; bg: string }[] = [
       <text class="time-display">{{ timeStr }}</text>
 
       <view class="icon-btn" @click="uni.navigateTo({ url: '/pages/messages/index' })">
-        💬
+        <SvgIcon name="message" />
         <view class="notif-dot" />
       </view>
 

@@ -6,6 +6,7 @@ import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 import { getUserList, getUserDetail, createUser, updateUser, deleteUser, batchEnable, batchDisable, type UserItem } from '@/api/user'
 import { get, post } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
@@ -212,11 +213,11 @@ onMounted(loadList)
 
     <!-- 统计栏 -->
     <view class="stats-row">
-      <KpiCard icon="👥" label="总用户数"  :value="pageStats.total"    :trend="{ dir:'up',   text:'12.3%' }" icon-bg="#eff6ff" />
-      <KpiCard icon="✅" label="已激活"    :value="pageStats.active"   :trend="{ dir:'up',   text:'8.1%'  }" icon-bg="#f0fdf4" />
-      <KpiCard icon="⏳" label="待审核"    :value="pageStats.pending"  :trend="{ dir:'up',   text:'今日+34' }" icon-bg="#fffbeb" />
-      <KpiCard icon="🚫" label="已禁用"    :value="pageStats.disabled" :trend="{ dir:'down', text:'无变化'  }" icon-bg="#fef2f2" />
-      <KpiCard icon="🆕" label="今日新增"  :value="pageStats.todayNew" :trend="{ dir:'up',   text:'较昨日+12' }" icon-bg="#faf5ff" />
+      <KpiCard icon="group" label="总用户数"  :value="pageStats.total"    :trend="{ dir:'up',   text:'12.3%' }" icon-bg="#eff6ff" />
+      <KpiCard icon="check-circle" label="已激活"    :value="pageStats.active"   :trend="{ dir:'up',   text:'8.1%'  }" icon-bg="#f0fdf4" />
+      <KpiCard icon="clock" label="待审核"    :value="pageStats.pending"  :trend="{ dir:'up',   text:'今日+34' }" icon-bg="#fffbeb" />
+      <KpiCard icon="ban" label="已禁用"    :value="pageStats.disabled" :trend="{ dir:'down', text:'无变化'  }" icon-bg="#fef2f2" />
+      <KpiCard icon="new" label="今日新增"  :value="pageStats.todayNew" :trend="{ dir:'up',   text:'较昨日+12' }" icon-bg="#faf5ff" />
     </view>
 
     <!-- 筛选 -->
@@ -225,7 +226,7 @@ onMounted(loadList)
       @reset="() => { filterParams.value = {}; loadList() }"
       @export="() => uni.showToast({ title: '导出中...', icon: 'none' })">
       <template #extra-actions>
-        <view v-if="userStore.hasPermission('user:create')" class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增用户</view>
+        <view v-if="userStore.hasPermission('user:create')" class="fp-btn fp-btn-primary" @click="openCreate"><SvgIcon name="add" /> 新增用户</view>
       </template>
     </FilterPanel>
 
@@ -238,7 +239,7 @@ onMounted(loadList)
           <view v-if="selectedIds.length && userStore.hasPermission('user:update')" class="t-btn t-btn-danger"  @click.stop="handleBatchDisable">批量禁用</view>
         </view>
         <view class="toolbar-right">
-          <view class="icon-btn" @click="loadList">🔄</view>
+          <view class="icon-btn" @click="loadList"><SvgIcon name="refresh" /></view>
         </view>
       </view>
 
@@ -289,9 +290,9 @@ onMounted(loadList)
           <view class="td" style="flex:0.9"><text class="t-muted">{{ row.lastLoginAt !== '-' ? row.lastLoginAt.slice(0,10) : '—' }}</text></view>
           <view class="td" style="flex:1.2">
             <view class="action-btns">
-              <IconBtn icon="👁" tip="查看详情" type="view" @click="openDetail(row.id)" />
-              <IconBtn v-if="userStore.hasPermission('user:update')" icon="✏️" tip="编辑" type="edit" @click="openEdit(row)" />
-              <IconBtn icon="⋯" tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
+              <IconBtn icon="eye" tip="查看详情" type="view" @click="openDetail(row.id)" />
+              <IconBtn v-if="userStore.hasPermission('user:update')" icon="edit" tip="编辑" type="edit" @click="openEdit(row)" />
+              <IconBtn icon="more" tip="更多操作" type="default" @click="(e:any) => openMoreMenu(e as MouseEvent, row)" />
             </view>
           </view>
         </view>
@@ -305,15 +306,15 @@ onMounted(loadList)
     <!-- ··· 更多菜单 -->
     <!-- #ifdef H5 -->
     <view v-if="moreMenuRow" class="more-menu" :style="moreMenuStyle" @click.stop>
-      <view class="mm-item" @click="openDetail(moreMenuRow.id); closeMoreMenu()">👁 查看详情</view>
-      <view class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()">✏️ 编辑信息</view>
-      <view v-if="moreMenuRow.status !== 'active'" class="mm-item" @click="singleEnable(moreMenuRow)">✅ 启用账号</view>
-      <view v-if="moreMenuRow.status === 'active'" class="mm-item text-warn" @click="singleDisable(moreMenuRow)">🚫 禁用账号</view>
+      <view class="mm-item" @click="openDetail(moreMenuRow.id); closeMoreMenu()"><SvgIcon name="eye" /> 查看详情</view>
+      <view class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()"><SvgIcon name="edit" /> 编辑信息</view>
+      <view v-if="moreMenuRow.status !== 'active'" class="mm-item" @click="singleEnable(moreMenuRow)"><SvgIcon name="check-circle" /> 启用账号</view>
+      <view v-if="moreMenuRow.status === 'active'" class="mm-item text-warn" @click="singleDisable(moreMenuRow)"><SvgIcon name="ban" /> 禁用账号</view>
       <view class="mm-divider"/>
-      <view v-if="moreMenuRow.certStatus !== 'certified'" class="mm-item text-success" @click="certApprove(moreMenuRow)">🪪 通过实名认证</view>
-      <view v-if="moreMenuRow.certStatus !== 'none'" class="mm-item text-warn" @click="certReject(moreMenuRow)">✖ 拒绝/撤销认证</view>
+      <view v-if="moreMenuRow.certStatus !== 'certified'" class="mm-item text-success" @click="certApprove(moreMenuRow)"><SvgIcon name="badge" /> 通过实名认证</view>
+      <view v-if="moreMenuRow.certStatus !== 'none'" class="mm-item text-warn" @click="certReject(moreMenuRow)"><SvgIcon name="close" /> 拒绝/撤销认证</view>
       <view class="mm-divider"/>
-      <view v-if="userStore.hasPermission('user:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除用户</view>
+      <view v-if="userStore.hasPermission('user:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)"><SvgIcon name="delete" /> 删除用户</view>
     </view>
     <!-- #endif -->
 
@@ -323,7 +324,7 @@ onMounted(loadList)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">{{ formMode === 'create' ? '新增用户' : '编辑用户' }}</text>
-          <text class="modal-close" @click="showFormModal = false">✕</text>
+          <view class="modal-close" @click="showFormModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="form-row">
@@ -349,17 +350,17 @@ onMounted(loadList)
           <view class="form-row">
             <text class="form-label">状态</text>
             <view class="form-radio-group">
-              <view class="form-radio" :class="{ active: form.status === 1 }" @click="form.status = 1">✓ 正常</view>
-              <view class="form-radio" :class="{ active: form.status === 2 }" @click="form.status = 2">⏳ 待审核</view>
-              <view class="form-radio" :class="{ active: form.status === 3 }" @click="form.status = 3">🚫 禁用</view>
+              <view class="form-radio" :class="{ active: form.status === 1 }" @click="form.status = 1"><SvgIcon name="check" /> 正常</view>
+              <view class="form-radio" :class="{ active: form.status === 2 }" @click="form.status = 2"><SvgIcon name="clock" /> 待审核</view>
+              <view class="form-radio" :class="{ active: form.status === 3 }" @click="form.status = 3"><SvgIcon name="ban" /> 禁用</view>
             </view>
           </view>
           <view v-if="formMode === 'edit'" class="form-row">
             <text class="form-label">实名认证</text>
             <view class="form-radio-group">
-              <view class="form-radio" :class="{ active: form.certStatus === 0 }" @click="form.certStatus = 0">❌ 未认证</view>
-              <view class="form-radio cert-pending" :class="{ active: form.certStatus === 1 }" @click="form.certStatus = 1">⏳ 审核中</view>
-              <view class="form-radio cert-ok" :class="{ active: form.certStatus === 2 }" @click="form.certStatus = 2">🪪 已认证</view>
+              <view class="form-radio" :class="{ active: form.certStatus === 0 }" @click="form.certStatus = 0"><SvgIcon name="ban" /> 未认证</view>
+              <view class="form-radio cert-pending" :class="{ active: form.certStatus === 1 }" @click="form.certStatus = 1"><SvgIcon name="clock" /> 审核中</view>
+              <view class="form-radio cert-ok" :class="{ active: form.certStatus === 2 }" @click="form.certStatus = 2"><SvgIcon name="badge" /> 已认证</view>
             </view>
           </view>
         </view>
@@ -379,7 +380,7 @@ onMounted(loadList)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">用户详情</text>
-          <text class="modal-close" @click="showDetailModal = false">✕</text>
+          <view class="modal-close" @click="showDetailModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="detail-avatar-row">
@@ -405,8 +406,8 @@ onMounted(loadList)
         </view>
         <view class="modal-footer">
           <view class="m-btn m-btn-cancel" @click="showDetailModal = false">关闭</view>
-          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-success" @click="() => { showDetailModal=false; certApprove(detailUser) }">🪪 通过认证</view>
-          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-warn"    @click="() => { showDetailModal=false; certReject(detailUser) }">✖ 拒绝认证</view>
+          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-success" @click="() => { showDetailModal=false; certApprove(detailUser) }"><SvgIcon name="badge" /> 通过认证</view>
+          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-warn"    @click="() => { showDetailModal=false; certReject(detailUser) }"><SvgIcon name="close" /> 拒绝认证</view>
           <view class="m-btn m-btn-primary" @click="() => { showDetailModal = false; openEdit(detailUser) }">编辑信息</view>
         </view>
       </view>

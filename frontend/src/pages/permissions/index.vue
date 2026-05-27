@@ -6,6 +6,7 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import { get, post, put, del } from '@/api/request'
 import { useUserStore } from '@/stores/user'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 const userStore = useUserStore()
 
@@ -134,9 +135,9 @@ onMounted(loadData)
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <view class="stats-row">
-      <KpiCard icon="🔐" label="角色总数"   :value="pageStats.roleCount" :trend="{ dir:'up', text:'系统配置' }" icon-bg="#eff6ff" />
-      <KpiCard icon="📋" label="权限项总数" :value="pageStats.permCount" :trend="{ dir:'up', text:'系统内置' }" icon-bg="#f0fdf4" />
-      <KpiCard icon="👥" label="注册用户数" :value="pageStats.userCount" :trend="{ dir:'up', text:'实时统计' }" icon-bg="#fff7ed" />
+      <KpiCard icon="lock" label="角色总数"   :value="pageStats.roleCount" :trend="{ dir:'up', text:'系统配置' }" icon-bg="#eff6ff" />
+      <KpiCard icon="list" label="权限项总数" :value="pageStats.permCount" :trend="{ dir:'up', text:'系统内置' }" icon-bg="#f0fdf4" />
+      <KpiCard icon="group" label="注册用户数" :value="pageStats.userCount" :trend="{ dir:'up', text:'实时统计' }" icon-bg="#fff7ed" />
     </view>
 
     <view class="card perm-panel">
@@ -149,7 +150,7 @@ onMounted(loadData)
       <view v-if="activeTab==='roles'">
         <view class="toolbar">
           <view v-if="loading" class="loading-tip">加载中…</view>
-          <view v-if="userStore.hasPermission('permission')" class="t-btn t-btn-primary" @click="openCreateRole">＋ 新增角色</view>
+          <view v-if="userStore.hasPermission('permission')" class="t-btn t-btn-primary" @click="openCreateRole"><SvgIcon name="add" /> 新增角色</view>
         </view>
         <view class="t-head">
           <text class="th" style="flex:1.5">角色名称</text>
@@ -182,9 +183,9 @@ onMounted(loadData)
             <StatusBadge :status="role.status===1?'success':'danger'" :label="role.status===1?'启用':'禁用'" />
           </view>
           <view class="td action-btns" style="flex:1.5">
-            <IconBtn v-if="userStore.hasPermission('permission')" icon="🔐" tip="配置权限" type="team"   @click="openPermConfig(role)" />
-            <IconBtn v-if="userStore.hasPermission('permission')" icon="✏️" tip="编辑角色" type="edit"    @click="openEditRole(role)" />
-            <IconBtn v-if="userStore.hasPermission('permission')" icon="🗑"  tip="删除角色" type="danger" @click="deleteRole(role)" />
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="lock" tip="配置权限" type="team"   @click="openPermConfig(role)" />
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="edit" tip="编辑角色" type="edit"    @click="openEditRole(role)" />
+            <IconBtn v-if="userStore.hasPermission('permission')" icon="delete"  tip="删除角色" type="danger" @click="deleteRole(role)" />
             <text v-if="!userStore.hasPermission('permission')" class="t-muted" style="font-size:12px">只读</text>
           </view>
         </view>
@@ -196,13 +197,13 @@ onMounted(loadData)
         <view v-if="!permTree.length && !loading" class="empty-tip">暂无权限数据</view>
         <view v-for="node in permTree" :key="node.id" class="perm-node">
           <view class="perm-node-row perm-parent">
-            <text class="perm-icon">{{ node.type===1?'📁':node.type===2?'🔘':'🔗' }}</text>
+            <SvgIcon :name="node.type===1?'folder':node.type===2?'radio':'link'" class="perm-icon" />
             <text class="perm-name">{{ node.name }}</text>
             <text class="perm-code t-muted">{{ node.code }}</text>
             <text class="perm-path t-muted">{{ node.path }}</text>
           </view>
           <view v-for="child in node.children" :key="child.id" class="perm-node-row perm-child">
-            <text class="perm-icon">{{ child.type===1?'📄':child.type===2?'▪️':'🔌' }}</text>
+            <SvgIcon :name="child.type===1?'file':child.type===2?'dot':'link'" class="perm-icon" />
             <text class="perm-name">{{ child.name }}</text>
             <text class="perm-code t-muted">{{ child.code }}</text>
             <text class="perm-path t-muted">{{ child.path }}</text>
@@ -217,7 +218,7 @@ onMounted(loadData)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">{{ roleFormMode==='create' ? '新增角色' : '编辑角色' }}</text>
-          <text class="modal-close" @click="showRoleModal = false">✕</text>
+          <view class="modal-close" @click="showRoleModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="form-row">
@@ -235,8 +236,8 @@ onMounted(loadData)
           <view class="form-row">
             <text class="form-label">状态</text>
             <view class="form-radio-group">
-              <view class="form-radio" :class="{ active: roleForm.status===1 }" @click="roleForm.status=1">✓ 启用</view>
-              <view class="form-radio" :class="{ active: roleForm.status===0 }" @click="roleForm.status=0">✗ 禁用</view>
+              <view class="form-radio" :class="{ active: roleForm.status===1 }" @click="roleForm.status=1"><SvgIcon name="check" /> 启用</view>
+              <view class="form-radio" :class="{ active: roleForm.status===0 }" @click="roleForm.status=0"><SvgIcon name="ban" /> 禁用</view>
             </view>
           </view>
         </view>
@@ -254,7 +255,7 @@ onMounted(loadData)
       <view class="modal-box modal-lg">
         <view class="modal-header">
           <text class="modal-title">配置权限 · {{ permModalRole?.name }}</text>
-          <text class="modal-close" @click="showPermModal = false">✕</text>
+          <view class="modal-close" @click="showPermModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="perm-select-bar">
@@ -267,7 +268,7 @@ onMounted(loadData)
             <view class="perm-checkbox" :class="{ checked: checkedPermIds.includes(Number(perm.id)) }">
               <text v-if="checkedPermIds.includes(Number(perm.id))">✓</text>
             </view>
-            <text class="perm-icon-sm">{{ perm.type===1?'📁':perm.type===2?'🔘':'🔗' }}</text>
+            <SvgIcon :name="perm.type===1?'folder':perm.type===2?'radio':'link'" class="perm-icon-sm" />
             <text class="perm-check-name">{{ perm.name }}</text>
             <text class="perm-check-code t-muted">{{ perm.code }}</text>
           </view>

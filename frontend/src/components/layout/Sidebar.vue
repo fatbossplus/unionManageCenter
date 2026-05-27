@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 const collapsed  = ref(false)
 const userStore  = useUserStore()
@@ -10,37 +11,36 @@ const menus = computed(() => {
     {
       section: '概览',
       items: [
-        { icon: '🏠', label: '首页大屏', path: '/pages/dashboard/index', perm: '' },
+        { icon: 'home',     label: '首页大屏',   path: '/pages/dashboard/index', perm: '' },
       ],
     },
     {
       section: '核心业务',
       items: [
-        { icon: '👥', label: '用户管理',  path: '/pages/users/index',       perm: 'user' },
-        { icon: '🏢', label: '联盟管理',  path: '/pages/orgs/index',        perm: 'org' },
-        { icon: '🔐', label: '权限配置',  path: '/pages/permissions/index', perm: 'permission' },
-        { icon: '📦', label: '订单中心',  path: '/pages/orders/index',      perm: 'order' },
+        { icon: 'group',    label: '用户管理',   path: '/pages/users/index',       perm: 'user' },
+        { icon: 'building', label: '联盟管理',   path: '/pages/orgs/index',        perm: 'org' },
+        { icon: 'lock',     label: '权限配置',   path: '/pages/permissions/index', perm: 'permission' },
+        { icon: 'order',    label: '订单中心',   path: '/pages/orders/index',      perm: 'order' },
       ],
     },
     {
       section: '财务 & 报表',
       items: [
-        { icon: '💰', label: '财务结算', path: '/pages/finance/index',  perm: 'finance' },
-        { icon: '📊', label: '数据报表', path: '/pages/reports/index',  perm: 'report' },
+        { icon: 'money',   label: '财务结算', path: '/pages/finance/index', perm: 'finance' },
+        { icon: 'chart',   label: '数据报表', path: '/pages/reports/index', perm: 'report' },
       ],
     },
     {
       section: '系统',
       items: [
-        { icon: '💬', label: '消息通知',   path: '/pages/messages/index', perm: 'message' },
-        { icon: '⚙️', label: '系统设置',   path: '/pages/settings/index', perm: '' },
+        { icon: 'message', label: '消息通知',   path: '/pages/messages/index', perm: 'message' },
+        { icon: 'setting', label: '系统设置',   path: '/pages/settings/index', perm: '' },
         ...(userStore.hasPermission('admin:list')
-          ? [{ icon: '👤', label: '管理员管理', path: '/pages/admins/index', perm: 'admin:list' }]
+          ? [{ icon: 'user', label: '管理员管理', path: '/pages/admins/index', perm: 'admin:list' }]
           : []),
       ],
     },
   ]
-  // 过滤掉没有权限的菜单项
   return base.map(group => ({
     ...group,
     items: group.items.filter(item => !item.perm || userStore.hasPermission(item.perm)),
@@ -71,7 +71,7 @@ function navigate(path: string) {
     </view>
 
     <view class="collapse-btn" @click="collapsed = !collapsed">
-      {{ collapsed ? '▶' : '◀' }}
+      <SvgIcon :name="collapsed ? 'chevron-right' : 'chevron-left'" />
     </view>
 
     <scroll-view class="sidebar-nav" scroll-y>
@@ -84,7 +84,9 @@ function navigate(path: string) {
           :class="{ active: currentPath.includes(item.path.replace('/pages','').replace('/index','')) }"
           @click="navigate(item.path)"
         >
-          <text class="nav-icon">{{ item.icon }}</text>
+          <view class="nav-icon">
+            <SvgIcon :name="item.icon" />
+          </view>
           <text v-if="!collapsed" class="nav-label">{{ item.label }}</text>
           <text v-if="!collapsed && item.badge" class="nav-badge">{{ item.badge }}</text>
         </view>
@@ -135,10 +137,11 @@ function navigate(path: string) {
 .collapse-btn {
   padding: 8px 0;
   text-align: center;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--color-text-muted);
   cursor: pointer;
   border-bottom: 1px solid var(--color-border-light);
+  display: flex; align-items: center; justify-content: center;
   &:hover { color: var(--color-primary); }
 }
 .sidebar-nav { flex: 1; }
@@ -177,7 +180,11 @@ function navigate(path: string) {
     }
   }
 }
-.nav-icon { font-size: 16px; flex-shrink: 0; }
+.nav-icon {
+  font-size: 18px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+}
 .nav-label { flex: 1; }
 .nav-badge {
   background: #ef4444; color: #fff;

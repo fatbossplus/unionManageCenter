@@ -6,6 +6,7 @@ import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 import { getFinanceList, settleFinance } from '@/api/finance'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
@@ -105,11 +106,11 @@ onMounted(loadList)
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <view class="stats-row">
-      <KpiCard icon="📋" label="结算总笔数"   :value="pageStats.total"       :trend="{ dir:'up', text:'12%' }"    icon-bg="#eff6ff" />
-      <KpiCard icon="✅" label="已结算"       :value="pageStats.done"        :trend="{ dir:'up', text:'88.1%' }"  icon-bg="#f0fdf4" />
-      <KpiCard icon="⏳" label="待结算"       :value="pageStats.pending"     :trend="{ dir:'up', text:'+23今日' }" icon-bg="#fffbeb" />
-      <KpiCard icon="🔄" label="结算中"       :value="pageStats.processing"  :trend="{ dir:'down', text:'处理中' }" icon-bg="#eff6ff" />
-      <KpiCard icon="💰" label="总结算金额(元)" :value="pageStats.totalAmount":trend="{ dir:'up', text:'本月' }"   icon-bg="#f0fdf4" />
+      <KpiCard icon="list" label="结算总笔数"   :value="pageStats.total"       :trend="{ dir:'up', text:'12%' }"    icon-bg="#eff6ff" />
+      <KpiCard icon="check-circle" label="已结算"       :value="pageStats.done"        :trend="{ dir:'up', text:'88.1%' }"  icon-bg="#f0fdf4" />
+      <KpiCard icon="clock" label="待结算"       :value="pageStats.pending"     :trend="{ dir:'up', text:'+23今日' }" icon-bg="#fffbeb" />
+      <KpiCard icon="refresh" label="结算中"       :value="pageStats.processing"  :trend="{ dir:'down', text:'处理中' }" icon-bg="#eff6ff" />
+      <KpiCard icon="money" label="总结算金额(元)" :value="pageStats.totalAmount":trend="{ dir:'up', text:'本月' }"   icon-bg="#f0fdf4" />
     </view>
     <FilterPanel :fields="filterFields" :quick-tags="quickTags"
       @search="onSearch" @reset="() => { filterParams = {}; loadList() }" @export="()=>{}" />
@@ -138,8 +139,8 @@ onMounted(loadList)
         <text class="td t-muted" style="flex:0.8">{{ row.period }}</text>
         <text class="td t-muted" style="flex:1.1">{{ row.settledAt || '—' }}</text>
         <view class="td action-btns" style="flex:1">
-          <IconBtn icon="👁" tip="查看详情" type="view" @click="openDetail(row)" />
-          <IconBtn v-if="row._status === 1 && userStore.hasPermission('finance:settle')" icon="✓" tip="发起结算" type="money" @click="handleSettle(row.id)" />
+          <IconBtn icon="eye" tip="查看详情" type="view" @click="openDetail(row)" />
+          <IconBtn v-if="row._status === 1 && userStore.hasPermission('finance:settle')" icon="check" tip="发起结算" type="money" @click="handleSettle(row.id)" />
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"
@@ -152,7 +153,7 @@ onMounted(loadList)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">结算详情</text>
-          <text class="modal-close" @click="showDetailModal = false">✕</text>
+          <view class="modal-close" @click="showDetailModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="settle-amount-card">

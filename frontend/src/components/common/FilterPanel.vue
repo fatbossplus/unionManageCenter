@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 export interface FilterField {
   key: string
@@ -64,15 +65,17 @@ function getSelectedLabel(field: FilterField): string {
   <view class="filter-panel card">
     <view class="fp-header">
       <view class="fp-title">
-        <text>🔍 筛选条件</text>
+        <SvgIcon name="search" style="font-size:14px;color:var(--color-primary)" />
+        <text>筛选条件</text>
         <view
           v-if="Object.values(form).filter(v => v !== '' && v !== undefined).length"
           class="active-count"
         >{{ Object.values(form).filter(v => v !== '' && v !== undefined).length }}</view>
       </view>
-      <text class="fp-toggle" @click="expanded = !expanded">
-        {{ expanded ? '▲ 收起' : '▼ 展开' }}
-      </text>
+      <view class="fp-toggle" @click="expanded = !expanded">
+        <SvgIcon :name="expanded ? 'chevron-up' : 'chevron-down'" />
+        <text>{{ expanded ? '收起' : '展开' }}</text>
+      </view>
     </view>
 
     <view v-if="expanded">
@@ -94,7 +97,7 @@ function getSelectedLabel(field: FilterField): string {
             >
               <view class="fp-select">
                 <text class="fp-select-text">{{ getSelectedLabel(field) }}</text>
-                <text class="fp-arrow">▾</text>
+                <SvgIcon name="chevron-down" class="fp-arrow" />
               </view>
             </picker>
           </view>
@@ -116,10 +119,16 @@ function getSelectedLabel(field: FilterField): string {
       </view>
 
       <view class="fp-actions">
-        <view class="fp-btn fp-btn-primary" @click="handleSearch">🔍 查询</view>
-        <view class="fp-btn fp-btn-outline" @click="handleReset">↺ 重置</view>
+        <view class="fp-btn fp-btn-primary" @click="handleSearch">
+          <SvgIcon name="search" /> 查询
+        </view>
+        <view class="fp-btn fp-btn-outline" @click="handleReset">
+          <SvgIcon name="refresh" /> 重置
+        </view>
         <view class="fp-actions-right">
-          <view class="fp-btn fp-btn-outline" @click="emit('export')">📤 导出</view>
+          <view class="fp-btn fp-btn-outline" @click="emit('export')">
+            <SvgIcon name="export" /> 导出
+          </view>
           <slot name="extra-actions" />
         </view>
       </view>
@@ -137,7 +146,10 @@ function getSelectedLabel(field: FilterField): string {
   background: #ef4444; color: #fff;
   font-size: 10px; padding: 1px 5px; border-radius: 4px; font-weight: 400;
 }
-.fp-toggle { font-size: 12px; color: var(--color-primary); cursor: pointer; }
+.fp-toggle {
+  font-size: 12px; color: var(--color-primary); cursor: pointer;
+  display: flex; align-items: center; gap: 3px;
+}
 .fp-fields {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px;
 }

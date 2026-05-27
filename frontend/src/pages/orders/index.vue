@@ -6,6 +6,7 @@ import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 import { getOrderList, refundOrder, type OrderItem } from '@/api/order'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
@@ -111,11 +112,11 @@ onMounted(loadList)
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <view class="stats-row">
-      <KpiCard icon="📦" label="订单总数"   :value="pageStats.total"   :trend="{ dir:'up', text:'8.7%' }"   icon-bg="#eff6ff" />
-      <KpiCard icon="✅" label="已支付"     :value="pageStats.paid"    :trend="{ dir:'up', text:'本月' }"    icon-bg="#f0fdf4" />
-      <KpiCard icon="⏳" label="待支付"     :value="pageStats.pending" :trend="{ dir:'up', text:'今日+12' }" icon-bg="#fffbeb" />
-      <KpiCard icon="↩️" label="已退款"     :value="pageStats.refunded":trend="{ dir:'down', text:'较昨' }"  icon-bg="#fef2f2" />
-      <KpiCard icon="🆕" label="今日新增"   :value="pageStats.todayNew":trend="{ dir:'up', text:'+86' }"    icon-bg="#faf5ff" />
+      <KpiCard icon="order" label="订单总数"   :value="pageStats.total"   :trend="{ dir:'up', text:'8.7%' }"   icon-bg="#eff6ff" />
+      <KpiCard icon="check-circle" label="已支付"     :value="pageStats.paid"    :trend="{ dir:'up', text:'本月' }"    icon-bg="#f0fdf4" />
+      <KpiCard icon="clock" label="待支付"     :value="pageStats.pending" :trend="{ dir:'up', text:'今日+12' }" icon-bg="#fffbeb" />
+      <KpiCard icon="refund" label="已退款"     :value="pageStats.refunded":trend="{ dir:'down', text:'较昨' }"  icon-bg="#fef2f2" />
+      <KpiCard icon="new" label="今日新增"   :value="pageStats.todayNew":trend="{ dir:'up', text:'+86' }"    icon-bg="#faf5ff" />
     </view>
     <FilterPanel :fields="filterFields" :quick-tags="quickTags"
       @search="onSearch" @reset="() => { filterParams = {}; loadList() }" @export="()=>{}" />
@@ -150,8 +151,8 @@ onMounted(loadList)
         <text class="td" style="flex:1.2"><text class="org-tag">{{ row.orgName }}</text></text>
         <text class="td t-muted" style="flex:1.2">{{ row.createdAt }}</text>
         <view class="td action-btns" style="flex:1">
-          <IconBtn icon="👁" tip="查看详情" type="view" @click="openDetail(row)" />
-          <IconBtn v-if="row._status === 2 && userStore.hasPermission('order:refund')" icon="↩" tip="申请退款" type="warn" @click="handleRefund(row.id)" />
+          <IconBtn icon="eye" tip="查看详情" type="view" @click="openDetail(row)" />
+          <IconBtn v-if="row._status === 2 && userStore.hasPermission('order:refund')" icon="refund" tip="申请退款" type="warn" @click="handleRefund(row.id)" />
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"
@@ -164,7 +165,7 @@ onMounted(loadList)
       <view class="modal-box">
         <view class="modal-header">
           <text class="modal-title">订单详情</text>
-          <text class="modal-close" @click="showDetailModal = false">✕</text>
+          <view class="modal-close" @click="showDetailModal = false"><SvgIcon name="close" /></view>
         </view>
         <view class="modal-body">
           <view class="order-status-bar" :style="{ borderLeftColor: statusColors[detailRow._status] }">

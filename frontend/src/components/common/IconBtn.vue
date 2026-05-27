@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SvgIcon from '@/components/common/SvgIcon.vue'
+
 defineProps<{
   icon: string
   tip: string
@@ -16,14 +18,14 @@ defineEmits<{ (e: 'click'): void }>()
     :class="[`ib-${type || 'default'}`, size === 'sm' ? 'ib-sm' : '', { 'ib-disabled': disabled }]"
     @click.stop="!disabled && $emit('click')"
   >
-    <text class="ib-icon">{{ icon }}</text>
+    <SvgIcon :name="icon" class="ib-icon" />
     <view class="ib-tooltip">{{ tip }}</view>
   </view>
   <!-- #endif -->
   <!-- #ifndef H5 -->
   <view class="ib-wrap" :class="[`ib-${type || 'default'}`, { 'ib-disabled': disabled }]"
     @click.stop="!disabled && $emit('click')">
-    <text class="ib-icon">{{ icon }}</text>
+    <SvgIcon :name="icon" class="ib-icon" />
   </view>
   <!-- #endif -->
 </template>
@@ -41,7 +43,7 @@ defineEmits<{ (e: 'click'): void }>()
   &.ib-sm { width: 26px; height: 26px; border-radius: 5px; }
   &.ib-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 }
-.ib-icon { font-size: 14px; line-height: 1; user-select: none; }
+.ib-icon { font-size: 15px; line-height: 1; }
 
 /* 颜色主题 */
 .ib-view    { background: var(--color-primary-light, #eff6ff); color: var(--color-primary, #3b82f6); }

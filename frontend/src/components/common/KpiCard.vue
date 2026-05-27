@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { countUp } from '@/utils/countup'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 
 const props = defineProps<{
   icon: string
@@ -26,13 +27,14 @@ onMounted(() => {
     <view class="kpi-top">
       <text class="kpi-label">{{ label }}</text>
       <view class="kpi-icon" :style="{ background: iconBg || 'var(--color-primary-light)' }">
-        {{ icon }}
+        <SvgIcon :name="icon" />
       </view>
     </view>
     <text class="kpi-num">{{ unit }}{{ displayValue.toLocaleString() }}</text>
     <view v-if="trend" class="kpi-trend">
       <text :class="trend.dir === 'up' ? 'trend-up' : 'trend-down'">
-        {{ trend.dir === 'up' ? '↑' : '↓' }} {{ trend.text }}
+        <SvgIcon :name="trend.dir === 'up' ? 'arrow-up' : 'arrow-down'" />
+        {{ trend.text }}
       </text>
     </view>
     <view v-if="sparkline?.length" class="sparkline">
@@ -56,8 +58,8 @@ onMounted(() => {
 }
 .kpi-label { font-size: 12px; color: var(--color-text-muted); }
 .kpi-icon {
-  width: 36px; height: 36px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
 }
 .kpi-num {
   font-size: 26px; font-weight: 700;

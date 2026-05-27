@@ -10,10 +10,10 @@ const breadcrumbs = [{ label: '首页' }, { label: '系统' }, { label: '消息�
 const pageStats = reactive({ total: 0, unread: 0, system: 0, order: 0, security: 0 })
 
 const typeMap: Record<string, { label: string; color: string; icon: string }> = {
-  system:   { label: '系统通知', color: '#3b82f6', icon: '🔔' },
-  order:    { label: '订单通知', color: '#f59e0b', icon: '📦' },
-  finance:  { label: '财务通知', color: '#10b981', icon: '💰' },
-  security: { label: '安全告警', color: '#ef4444', icon: '🛡️' },
+  system:   { label: '系统通知', color: '#3b82f6', icon: 'bell' },
+  order:    { label: '订单通知', color: '#f59e0b', icon: 'order' },
+  finance:  { label: '财务通知', color: '#10b981', icon: 'money' },
+  security: { label: '安全告警', color: '#ef4444', icon: 'shield' },
 }
 
 interface MsgRow { id: string; title: string; content: string; type: string; read: boolean; createdAt: string }
@@ -89,11 +89,11 @@ onMounted(loadList)
 <template>
   <AppLayout :breadcrumbs="breadcrumbs">
     <view class="stats-row">
-      <KpiCard icon="💬" label="消息总数"   :value="pageStats.total"   :trend="{ dir:'up', text:'今日+5' }"   icon-bg="#eff6ff" />
-      <KpiCard icon="🔴" label="未读消息"   :value="pageStats.unread"  :trend="{ dir:'up', text:'待处理' }"   icon-bg="#fef2f2" />
-      <KpiCard icon="🔔" label="系统通知"   :value="pageStats.system"  :trend="{ dir:'down', text:'无新增' }" icon-bg="#eff6ff" />
-      <KpiCard icon="📦" label="订单通知"   :value="pageStats.order"   :trend="{ dir:'up', text:'+12' }"     icon-bg="#fffbeb" />
-      <KpiCard icon="🛡️" label="安全告警"   :value="pageStats.security":trend="{ dir:'up', text:'需关注' }"  icon-bg="#fef2f2" />
+      <KpiCard icon="message" label="消息总数"   :value="pageStats.total"   :trend="{ dir:'up', text:'今日+5' }"   icon-bg="#eff6ff" />
+      <KpiCard icon="warning" label="未读消息"   :value="pageStats.unread"  :trend="{ dir:'up', text:'待处理' }"   icon-bg="#fef2f2" />
+      <KpiCard icon="bell" label="系统通知"   :value="pageStats.system"  :trend="{ dir:'down', text:'无新增' }" icon-bg="#eff6ff" />
+      <KpiCard icon="order" label="订单通知"   :value="pageStats.order"   :trend="{ dir:'up', text:'+12' }"     icon-bg="#fffbeb" />
+      <KpiCard icon="shield" label="安全告警"   :value="pageStats.security":trend="{ dir:'up', text:'需关注' }"  icon-bg="#fef2f2" />
     </view>
 
     <view class="card msg-panel">
@@ -103,13 +103,13 @@ onMounted(loadList)
             :key="f[0]" class="ftab" :class="{ active: activeFilter === f[0] }"
             @click="activeFilter = f[0]">{{ f[1] }}</text>
         </view>
-        <view class="t-btn t-btn-outline" @click="doMarkAllRead">✓ 全部已读</view>
+        <view class="t-btn t-btn-outline" @click="doMarkAllRead"><SvgIcon name="check" /> 全部已读</view>
       </view>
 
       <view v-if="!filteredList.length && !loading" class="empty-tip">暂无消息</view>
       <view v-for="msg in filteredList" :key="msg.id" class="msg-item" :class="{ unread: !msg.read }" @click="markRead(msg.id)">
         <view class="msg-icon" :style="{ background: typeMap[msg.type]?.color + '20', color: typeMap[msg.type]?.color }">
-          {{ typeMap[msg.type]?.icon }}
+          <SvgIcon :name="typeMap[msg.type]?.icon || 'bell'" />
         </view>
         <view class="msg-body">
           <view class="msg-head">

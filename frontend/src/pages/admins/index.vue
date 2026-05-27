@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import IconBtn from '@/components/common/IconBtn.vue'
+import SvgIcon from '@/components/common/SvgIcon.vue'
 import { get, post, put, del } from '@/api/request'
 import { useUserStore } from '@/stores/user'
 
@@ -142,10 +143,10 @@ onMounted(() => { loadList(); loadRoles() })
     <view class="card toolbar-card">
       <view class="tb-left">
         <input class="tb-search" v-model="keyword" placeholder="搜索用户名/姓名" @confirm="loadList"/>
-        <view class="tb-btn" @click="loadList">🔍 查询</view>
+        <view class="tb-btn" @click="loadList"><SvgIcon name="search" /> 查询</view>
       </view>
       <view class="tb-right">
-        <view v-if="userStore.hasPermission('admin:create')" class="tb-btn tb-btn-primary" @click="openCreate">＋ 新增管理员</view>
+        <view v-if="userStore.hasPermission('admin:create')" class="tb-btn tb-btn-primary" @click="openCreate"><SvgIcon name="add" /> 新增管理员</view>
       </view>
     </view>
 
@@ -190,9 +191,9 @@ onMounted(() => { loadList(); loadRoles() })
           </view>
           <view class="td" style="flex:1">
             <view class="action-btns">
-              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="✏️" tip="编辑管理员" type="edit" @click="openEdit(row)" />
-              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="🔑" tip="重置密码" type="key" @click="openReset(row)" />
-              <IconBtn icon="⋯" tip="更多操作" type="default" @click="(e:any)=>openMoreMenu(e as MouseEvent, row)" />
+              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="edit" tip="编辑管理员" type="edit" @click="openEdit(row)" />
+              <IconBtn v-if="userStore.hasPermission('admin:update')" icon="key" tip="重置密码" type="key" @click="openReset(row)" />
+              <IconBtn icon="more" tip="更多操作" type="default" @click="(e:any)=>openMoreMenu(e as MouseEvent, row)" />
             </view>
           </view>
         </view>
@@ -211,11 +212,11 @@ onMounted(() => { loadList(); loadRoles() })
     <!-- 更多菜单 -->
     <!-- #ifdef H5 -->
     <view v-if="moreMenuRow" class="more-menu" :style="moreMenuStyle" @click.stop>
-      <view v-if="userStore.hasPermission('admin:update')" class="mm-item" @click="openEdit(moreMenuRow!); closeMoreMenu()">✏️ 编辑</view>
-      <view v-if="userStore.hasPermission('admin:update')" class="mm-item" @click="openReset(moreMenuRow!); closeMoreMenu()">🔑 重置密码</view>
+      <view v-if="userStore.hasPermission('admin:update')" class="mm-item" @click="openEdit(moreMenuRow!); closeMoreMenu()"><SvgIcon name="edit" /> 编辑</view>
+      <view v-if="userStore.hasPermission('admin:update')" class="mm-item" @click="openReset(moreMenuRow!); closeMoreMenu()"><SvgIcon name="key" /> 重置密码</view>
       <view class="mm-divider"/>
       <view v-if="userStore.hasPermission('admin:delete') && moreMenuRow!.id !== Number(userStore.info?.id)"
-            class="mm-item text-danger" @click="handleDelete(moreMenuRow!); closeMoreMenu()">🗑 删除</view>
+            class="mm-item text-danger" @click="handleDelete(moreMenuRow!); closeMoreMenu()"><SvgIcon name="delete" /> 删除</view>
     </view>
     <!-- #endif -->
 
@@ -262,8 +263,8 @@ onMounted(() => { loadList(); loadRoles() })
           <view class="form-row">
             <text class="form-label">状态</text>
             <view class="form-radio-group">
-              <view class="form-radio" :class="{active: form.status===1}" @click="form.status=1">✓ 正常</view>
-              <view class="form-radio" :class="{active: form.status===0}" @click="form.status=0">🚫 禁用</view>
+              <view class="form-radio" :class="{active: form.status===1}" @click="form.status=1"><SvgIcon name="check" /> 正常</view>
+              <view class="form-radio" :class="{active: form.status===0}" @click="form.status=0"><SvgIcon name="ban" /> 禁用</view>
             </view>
           </view>
         </view>
