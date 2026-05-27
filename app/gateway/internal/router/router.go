@@ -21,6 +21,11 @@ package router
 //  └──────────────────────────────────────────────────────────────────────┘
 
 import (
+	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -165,6 +170,25 @@ func New() *gin.Engine {
 		secured.GET("/reports/summary", rpt.Summary)
 		secured.GET("/reports/daily", rpt.Daily)
 		secured.GET("/reports/roles", rpt.RoleStats)
+	}
+
+	// ── CMS 微服务代理 ────────────────────────────────────────
+	// 所有 /api/v1/cms/* 请求反向代理到 CMS 服务（默认 :8082）
+	cmsTarget := os.Getenv("CMS_SERVICE_URL")
+	if cmsTarget == "" {
+		cmsTarget = "http://127.0.0.1:8082"
+	}
+	if target, err := url.Parse(cmsTarget); err == nil {
+		proxy := httputil.NewSingleHostReverseProxy(target)
+		proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadGateway)
+			io.WriteString(w, `{"code":502,"msg":"CMS服务暂时不可用，请稍后重试"}`)
+		}
+		// 不加 JWT 中间件：CMS 服务自己验证 JWT
+		r.Any("/api/v1/cms/*path", func(c *gin.Context) {
+			proxy.ServeHTTP(c.Writer, c.Request)
+		})
 	}
 
 	return r

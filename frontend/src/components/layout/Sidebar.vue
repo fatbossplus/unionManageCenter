@@ -31,6 +31,15 @@ const menus = computed(() => {
       ],
     },
     {
+      section: '内容管理',
+      items: [
+        { icon: 'link',     label: '平台账号',  path: '/pages/cms/accounts',  perm: '' },
+        { icon: 'setting',  label: '驱动配置',  path: '/pages/cms/drivers',   perm: '' },
+        { icon: 'calendar', label: '采集任务',  path: '/pages/cms/tasks',     perm: '' },
+        { icon: 'file',     label: '发布管理',  path: '/pages/cms/publishes', perm: '' },
+      ],
+    },
+    {
       section: '系统',
       items: [
         { icon: 'message', label: '消息通知',   path: '/pages/messages/index', perm: 'message' },

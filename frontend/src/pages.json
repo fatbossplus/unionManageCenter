@@ -43,6 +43,22 @@
     {
       "path": "pages/admins/index",
       "style": { "navigationBarTitleText": "管理员管理" }
+    },
+    {
+      "path": "pages/cms/accounts",
+      "style": { "navigationBarTitleText": "平台账号" }
+    },
+    {
+      "path": "pages/cms/drivers",
+      "style": { "navigationBarTitleText": "驱动配置" }
+    },
+    {
+      "path": "pages/cms/tasks",
+      "style": { "navigationBarTitleText": "采集任务" }
+    },
+    {
+      "path": "pages/cms/publishes",
+      "style": { "navigationBarTitleText": "发布管理" }
     }
   ],
   "globalStyle": {
