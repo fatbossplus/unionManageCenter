@@ -94,11 +94,11 @@ const showFormModal = ref(false)
 const formMode = ref<'create' | 'edit'>('create')
 const formSaving = ref(false)
 const editingId   = ref('')
-const form = reactive({ username: '', email: '', password: '', phone: '', realName: '', status: 1 })
+const form = reactive({ username: '', email: '', password: '', phone: '', realName: '', status: 1, certStatus: 0 })
 
 function openCreate() {
   formMode.value = 'create'; editingId.value = ''
-  Object.assign(form, { username: '', email: '', password: '', phone: '', realName: '', status: 1 })
+  Object.assign(form, { username: '', email: '', password: '', phone: '', realName: '', status: 1, certStatus: 0 })
   showFormModal.value = true
 }
 function openEdit(row: any) {
@@ -107,6 +107,7 @@ function openEdit(row: any) {
     username: row.username, email: row.email,
     password: '', phone: row._raw?.phone || '',
     realName: row._raw?.real_name || '', status: row._raw?.status || 1,
+    certStatus: row._raw?.cert_status ?? 0,
   })
   showFormModal.value = true
 }
@@ -115,7 +116,7 @@ async function saveForm() {
   if (formMode.value === 'create' && !form.password) { uni.showToast({ title: '密码不能为空', icon: 'none' }); return }
   formSaving.value = true
   try {
-    const payload: any = { username: form.username, email: form.email, phone: form.phone, real_name: form.realName, status: form.status }
+    const payload: any = { username: form.username, email: form.email, phone: form.phone, real_name: form.realName, status: form.status, cert_status: form.certStatus }
     if (form.password) payload.password = form.password
     if (formMode.value === 'create') {
       await createUser(payload)
@@ -172,6 +173,24 @@ async function handleDelete(row: any) {
     if (!res.confirm) return
     try { await deleteUser(row.id); uni.showToast({ title: '已删除', icon: 'success' }); loadList() }
     catch (e: any) { uni.showToast({ title: e?.message || '删除失败', icon: 'none' }) }
+  }})
+}
+
+// 实名认证审核
+async function certApprove(row: any) {
+  closeMoreMenu()
+  uni.showModal({ title: '通过实名认证', content: `确认通过「${row.username}」的实名认证？`, success: async (res) => {
+    if (!res.confirm) return
+    try { await updateUser(row.id, { cert_status: 2 }); uni.showToast({ title: '已通过认证', icon: 'success' }); loadList() }
+    catch (e: any) { uni.showToast({ title: e?.message || '操作失败', icon: 'none' }) }
+  }})
+}
+async function certReject(row: any) {
+  closeMoreMenu()
+  uni.showModal({ title: '拒绝实名认证', content: `确认拒绝「${row.username}」的实名认证？`, success: async (res) => {
+    if (!res.confirm) return
+    try { await updateUser(row.id, { cert_status: 0 }); uni.showToast({ title: '已拒绝认证', icon: 'success' }); loadList() }
+    catch (e: any) { uni.showToast({ title: e?.message || '操作失败', icon: 'none' }) }
   }})
 }
 
@@ -287,6 +306,9 @@ onMounted(loadList)
       <view v-if="moreMenuRow.status !== 'active'" class="mm-item" @click="singleEnable(moreMenuRow)">✅ 启用账号</view>
       <view v-if="moreMenuRow.status === 'active'" class="mm-item text-warn" @click="singleDisable(moreMenuRow)">🚫 禁用账号</view>
       <view class="mm-divider"/>
+      <view v-if="moreMenuRow.certStatus !== 'certified'" class="mm-item text-success" @click="certApprove(moreMenuRow)">🪪 通过实名认证</view>
+      <view v-if="moreMenuRow.certStatus !== 'none'" class="mm-item text-warn" @click="certReject(moreMenuRow)">✖ 拒绝/撤销认证</view>
+      <view class="mm-divider"/>
       <view class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除用户</view>
     </view>
     <!-- #endif -->
@@ -326,6 +348,14 @@ onMounted(loadList)
               <view class="form-radio" :class="{ active: form.status === 1 }" @click="form.status = 1">✓ 正常</view>
               <view class="form-radio" :class="{ active: form.status === 2 }" @click="form.status = 2">⏳ 待审核</view>
               <view class="form-radio" :class="{ active: form.status === 3 }" @click="form.status = 3">🚫 禁用</view>
+            </view>
+          </view>
+          <view v-if="formMode === 'edit'" class="form-row">
+            <text class="form-label">实名认证</text>
+            <view class="form-radio-group">
+              <view class="form-radio" :class="{ active: form.certStatus === 0 }" @click="form.certStatus = 0">❌ 未认证</view>
+              <view class="form-radio cert-pending" :class="{ active: form.certStatus === 1 }" @click="form.certStatus = 1">⏳ 审核中</view>
+              <view class="form-radio cert-ok" :class="{ active: form.certStatus === 2 }" @click="form.certStatus = 2">🪪 已认证</view>
             </view>
           </view>
         </view>
@@ -371,6 +401,8 @@ onMounted(loadList)
         </view>
         <view class="modal-footer">
           <view class="m-btn m-btn-cancel" @click="showDetailModal = false">关闭</view>
+          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-success" @click="() => { showDetailModal=false; certApprove(detailUser) }">🪪 通过认证</view>
+          <view v-if="detailUser.certStatus === 'pending'" class="m-btn m-btn-warn"    @click="() => { showDetailModal=false; certReject(detailUser) }">✖ 拒绝认证</view>
           <view class="m-btn m-btn-primary" @click="() => { showDetailModal = false; openEdit(detailUser) }">编辑信息</view>
         </view>
       </view>
@@ -442,6 +474,11 @@ onMounted(loadList)
 .m-btn { height: 36px; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; padding: 0 20px; cursor: pointer; }
 .m-btn-cancel  { background: var(--color-border-light); color: var(--color-text-secondary); }
 .m-btn-primary { background: var(--color-primary); color: #fff; &.loading { opacity: 0.7; pointer-events: none; } }
+.m-btn-success { background: #16a34a; color: #fff; }
+.m-btn-warn    { background: #f59e0b; color: #fff; }
+.text-success  { color: #16a34a; }
+.cert-ok.active  { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
+.cert-pending.active { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
 
 /* 详情 Modal */
 .detail-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border-light); }
