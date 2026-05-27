@@ -47,7 +47,7 @@ function normalizeUser(u: any): UserItem & { _raw: any } {
   return {
     id: String(u.id), username: u.username, email: u.email || '',
     avatar: u.avatar, orgName: u.org_name || '',
-    role: u.roles?.[0]?.code || 'member',
+    role: u.org_role || 'member',
     status: statusMap[u.status] || 'active',
     certStatus: certMap[u.cert_status] || 'none',
     createdAt: u.created_at?.slice(0, 10) || '',

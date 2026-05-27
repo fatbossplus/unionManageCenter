@@ -37,7 +37,7 @@ const profileSaving = ref(false)
 
 async function loadProfile() {
   try {
-    const me: any = await get('/users/me')
+    const me: any = await get('/users/me')  // 由 AdminHandler.Me 处理，返回当前管理员信息
     Object.assign(profileForm, { username: me.username || '', email: me.email || '', phone: me.phone || '', realName: me.real_name || '' })
   } catch {}
 }
@@ -46,7 +46,9 @@ async function saveProfile() {
   try {
     const userId = userStore.info?.id
     if (!userId) { uni.showToast({ title: '未获取到用户信息', icon: 'none' }); return }
-    await put(`/users/${userId}`, { email: profileForm.email, phone: profileForm.phone, real_name: profileForm.realName })
+    await put(`/admins/${userId}`, { email: profileForm.email, phone: profileForm.phone, real_name: profileForm.realName })
+    // 同步更新 store 中的 email 字段
+    userStore.setInfo({ ...userStore.info!, email: profileForm.email })
     uni.showToast({ title: '个人资料已更新', icon: 'success' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '保存失败', icon: 'none' })
@@ -63,7 +65,7 @@ async function changePassword() {
   pwdSaving.value = true
   try {
     const userId = userStore.info?.id
-    await put(`/users/${userId}`, { password: pwdForm.newPwd })
+    await put(`/admins/${userId}`, { password: pwdForm.newPwd })
     uni.showToast({ title: '密码修改成功，请重新登录', icon: 'success' })
     Object.assign(pwdForm, { oldPwd: '', newPwd: '', confirmPwd: '' })
   } catch (e: any) {

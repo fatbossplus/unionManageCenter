@@ -203,7 +203,14 @@ func itoa(n int) string {
 }
 
 func ftoa(f float64) string {
-	// simple 1-decimal format
+	// 1位小数格式，负数整体取反处理
+	if f < 0 {
+		return "-" + ftoa(-f)
+	}
 	i := int(f * 10)
-	return itoa(i/10) + "." + itoa(i%10)
+	frac := i % 10
+	if frac < 0 {
+		frac = -frac
+	}
+	return itoa(i/10) + "." + itoa(frac)
 }

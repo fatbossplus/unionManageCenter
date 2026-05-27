@@ -99,10 +99,13 @@ func New() *gin.Engine {
 		// 角色 & 权限（仅 superadmin 可改）
 		ro := handler.NewRoleHandler()
 		secured.GET("/roles", ro.List)
+		secured.GET("/roles/:id", ro.Get)
 		secured.POST("/roles", perm("permission"), ro.Create)
 		secured.PUT("/roles/:id", perm("permission"), ro.Update)
 		secured.DELETE("/roles/:id", perm("permission"), ro.Delete)
 		secured.PUT("/roles/:id/permissions", perm("permission"), ro.AssignPermissions)
+		// 前端用 POST，同时兼容
+		secured.POST("/roles/:id/permissions", perm("permission"), ro.AssignPermissions)
 
 		pm := handler.NewPermissionHandler()
 		secured.GET("/permissions", pm.Tree)

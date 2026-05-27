@@ -33,7 +33,9 @@ type User struct {
 	Source      string     `gorm:"size:32;default:'web'" json:"source"`
 	LastLoginAt *time.Time `                             json:"last_login_at"`
 	LastLoginIP string     `gorm:"size:64"               json:"last_login_ip"`
-	Roles       []Role     `gorm:"many2many:user_roles;" json:"roles,omitempty"`
+	// OrgRole 平台用户在所属联盟中的角色（非 GORM 列，查询时用 SELECT 补充）
+	OrgRole string `gorm:"-" json:"org_role,omitempty"`
+	OrgName string `gorm:"-" json:"org_name,omitempty"`
 }
 
 func (User) TableName() string { return "users" }

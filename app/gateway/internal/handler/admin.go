@@ -12,6 +12,13 @@ import (
 	"unionManageCenter/pkg/response"
 )
 
+// AdminVO 管理员视图对象（含角色名称）
+type AdminVO struct {
+	model.Admin
+	RoleName string `json:"role_name"`
+	RoleCode string `json:"role_code"`
+}
+
 type AdminHandler struct{ db *gorm.DB }
 
 func NewAdminHandler() *AdminHandler {
@@ -45,11 +52,6 @@ func (h *AdminHandler) List(c *gin.Context) {
 	roleMap := map[uint64]model.Role{}
 	for _, r := range roles { roleMap[r.ID] = r }
 
-	type AdminVO struct {
-		model.Admin
-		RoleName string `json:"role_name"`
-		RoleCode string `json:"role_code"`
-	}
 	list := make([]AdminVO, 0, len(admins))
 	for _, a := range admins {
 		vo := AdminVO{Admin: a}
@@ -164,7 +166,7 @@ func (h *AdminHandler) Delete(c *gin.Context) {
 		response.Fail(c, 400, "不能删除自己")
 		return
 	}
-	h.db.Model(&model.Admin{}).Where("id = ?", id).Update("deleted_at", "NOW()")
+	h.db.Model(&model.Admin{}).Where("id = ?", id).Update("deleted_at", gorm.Expr("NOW()"))
 	response.OKMsg(c, "删除成功")
 }
 

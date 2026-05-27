@@ -97,9 +97,11 @@ const flatPerms = computed(() => {
 async function openPermConfig(role: RoleRow) {
   permModalRole.value = role; showPermModal.value = true; checkedPermIds.value = []
   try {
-    // 获取该角色当前拥有的权限
+    // GET /roles/:id 返回 { role:{...}, permissions:[id1,id2,...] }
     const roleDetail: any = await get(`/roles/${role.id}`)
-    const owned: number[] = (roleDetail?.permissions || []).map((p: any) => Number(p.id))
+    const rawPerms = roleDetail?.permissions || []
+    // 兼容两种格式：纯 ID 数组 或 对象数组
+    const owned: number[] = rawPerms.map((p: any) => typeof p === 'object' ? Number(p.id) : Number(p))
     checkedPermIds.value = owned
   } catch { checkedPermIds.value = [] }
 }
