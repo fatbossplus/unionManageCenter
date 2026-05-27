@@ -146,33 +146,36 @@ func (h *ReportHandler) Daily(c *gin.Context) {
 	response.OK(c, out)
 }
 
-// RoleStats GET /reports/roles — 角色分布统计
+// RoleStats GET /reports/roles — 角色分布统计（管理员维度）
 func (h *ReportHandler) RoleStats(c *gin.Context) {
 	type RoleRow struct {
-		Name      string `json:"name"`
-		Code      string `json:"code"`
-		UserCount int64  `json:"user_count"`
-		PermCount int64  `json:"perm_count"`
-		Status    int8   `json:"status"`
+		ID          uint   `json:"id"`
+		Name        string `json:"name"`
+		Code        string `json:"code"`
+		Description string `json:"description"`
+		UserCount   int64  `json:"user_count"`
+		PermCount   int64  `json:"perm_count"`
+		Status      int8   `json:"status"`
 	}
 	var rows []RoleRow
+	// user_count 改为统计 admins 表（原 user_roles 表已废弃）
 	h.db.Table("roles r").
-		Select("r.name, r.code, r.status, "+
-			"(SELECT COUNT(*) FROM user_roles ur WHERE ur.role_id=r.id) AS user_count, "+
+		Select("r.id, r.name, r.code, r.description, r.status, "+
+			"(SELECT COUNT(*) FROM admins a WHERE a.role_id=r.id AND a.deleted_at IS NULL) AS user_count, "+
 			"(SELECT COUNT(*) FROM role_permissions rp WHERE rp.role_id=r.id) AS perm_count").
 		Where("r.deleted_at IS NULL").
 		Order("r.sort ASC").
 		Scan(&rows)
 
-	var totalUsers int64
-	h.db.Model(&model.User{}).Where("deleted_at IS NULL").Count(&totalUsers)
+	var totalAdmins int64
+	h.db.Table("admins").Where("deleted_at IS NULL").Count(&totalAdmins)
 
 	var totalPerms int64
 	h.db.Model(&model.Permission{}).Where("deleted_at IS NULL").Count(&totalPerms)
 
 	response.OK(c, gin.H{
 		"roles":       rows,
-		"total_users": totalUsers,
+		"total_users": totalAdmins,
 		"total_perms": totalPerms,
 	})
 }
