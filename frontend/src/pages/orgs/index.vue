@@ -8,6 +8,9 @@ import Pagination from '@/components/common/Pagination.vue'
 import { getOrgList, createOrg, updateOrg, deleteOrg, type OrgItem } from '@/api/org'
 import { get, post, del } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const breadcrumbs = [{ label: '首页' }, { label: '核心业务' }, { label: '联盟管理' }]
 const pageStats = reactive({ total: 0, active: 0, pending: 0, frozen: 0, todayNew: 0 })
@@ -189,7 +192,7 @@ onMounted(loadList)
     <FilterPanel :fields="filterFields" :quick-tags="quickTags"
       @search="onSearch" @reset="() => { filterParams.value = {}; loadList() }" @export="() => {}">
       <template #extra-actions>
-        <view class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增联盟</view>
+        <view v-if="userStore.hasPermission('org:create')" class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增联盟</view>
       </template>
     </FilterPanel>
 
@@ -223,7 +226,7 @@ onMounted(loadList)
           <text class="td t-muted" style="flex:1">{{ row.createdAt.slice(0,10) }}</text>
           <view class="td action-btns" style="flex:1.3">
             <view class="act-btn act-view" @click.stop="openMembers(row)">成员</view>
-            <view class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
+            <view v-if="userStore.hasPermission('org:update')" class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
             <view class="act-btn act-more" @click.stop="(e) => openMoreMenu(e as MouseEvent, row)">···</view>
           </view>
         </view>
@@ -239,7 +242,7 @@ onMounted(loadList)
       <view class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()">✏️ 编辑联盟</view>
       <view class="mm-item" @click="openMembers(moreMenuRow); closeMoreMenu()">👥 成员管理</view>
       <view class="mm-divider"/>
-      <view class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除联盟</view>
+      <view v-if="userStore.hasPermission('org:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除联盟</view>
     </view>
 
     <!-- 新增/编辑 Modal -->

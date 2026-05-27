@@ -25,6 +25,8 @@ async function handleLogin() {
       role: res.user.role,
       email: res.user.email,
     })
+    // 登录后立即拉取权限码，写入 store 供各页面使用
+    await userStore.loadPermissions()
     uni.reLaunch({ url: '/pages/dashboard/index' })
   } catch (e: any) {
     uni.showToast({ title: e?.message || '登录失败', icon: 'none' })

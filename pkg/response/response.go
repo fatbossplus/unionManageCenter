@@ -31,3 +31,8 @@ func Fail(c *gin.Context, code int, msg string) {
 func Unauthorized(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, Result{Code: 401, Message: "未授权，请先登录"})
 }
+
+// Forbidden 返回 403 无权限响应
+func Forbidden(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusForbidden, Result{Code: 403, Message: "权限不足，禁止访问"})
+}

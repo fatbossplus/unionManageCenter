@@ -4,6 +4,9 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import KpiCard from '@/components/common/KpiCard.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { get, post, put, del } from '@/api/request'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const breadcrumbs = [{ label: '首页' }, { label: '核心业务' }, { label: '权限配置' }]
 const activeTab = ref('roles')
@@ -143,7 +146,7 @@ onMounted(loadData)
       <view v-if="activeTab==='roles'">
         <view class="toolbar">
           <view v-if="loading" class="loading-tip">加载中…</view>
-          <view class="t-btn t-btn-primary" @click="openCreateRole">＋ 新增角色</view>
+          <view v-if="userStore.hasPermission('permission')" class="t-btn t-btn-primary" @click="openCreateRole">＋ 新增角色</view>
         </view>
         <view class="t-head">
           <text class="th" style="flex:1.5">角色名称</text>
@@ -176,9 +179,10 @@ onMounted(loadData)
             <StatusBadge :status="role.status===1?'success':'danger'" :label="role.status===1?'启用':'禁用'" />
           </view>
           <view class="td action-btns" style="flex:1.5">
-            <view class="act-btn act-view" @click="openPermConfig(role)">配置权限</view>
-            <view class="act-btn act-edit" @click="openEditRole(role)">编辑</view>
-            <view class="act-btn act-danger" @click="deleteRole(role)">删除</view>
+            <view v-if="userStore.hasPermission('permission')" class="act-btn act-view" @click="openPermConfig(role)">配置权限</view>
+            <view v-if="userStore.hasPermission('permission')" class="act-btn act-edit" @click="openEditRole(role)">编辑</view>
+            <view v-if="userStore.hasPermission('permission')" class="act-btn act-danger" @click="deleteRole(role)">删除</view>
+            <view v-if="!userStore.hasPermission('permission')" class="t-muted" style="font-size:12px">只读</view>
           </view>
         </view>
       </view>

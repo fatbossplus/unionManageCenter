@@ -8,6 +8,9 @@ import Pagination from '@/components/common/Pagination.vue'
 import { getUserList, getUserDetail, createUser, updateUser, deleteUser, batchEnable, batchDisable, type UserItem } from '@/api/user'
 import { get, post } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const breadcrumbs = [{ label: '首页' }, { label: '核心业务' }, { label: '用户管理' }]
 const pageStats = reactive({ total: 0, active: 0, pending: 0, disabled: 0, todayNew: 0 })
@@ -221,7 +224,7 @@ onMounted(loadList)
       @reset="() => { filterParams.value = {}; loadList() }"
       @export="() => uni.showToast({ title: '导出中...', icon: 'none' })">
       <template #extra-actions>
-        <view class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增用户</view>
+        <view v-if="userStore.hasPermission('user:create')" class="fp-btn fp-btn-primary" @click="openCreate">＋ 新增用户</view>
       </template>
     </FilterPanel>
 
@@ -230,8 +233,8 @@ onMounted(loadList)
       <view class="table-toolbar">
         <view class="toolbar-left">
           <text class="sel-info">共 <text class="em">{{ total }}</text> 条，已选 <text class="em">{{ selectedIds.length }}</text> 条</text>
-          <view v-if="selectedIds.length" class="t-btn t-btn-outline" @click.stop="handleBatchEnable">批量启用</view>
-          <view v-if="selectedIds.length" class="t-btn t-btn-danger"  @click.stop="handleBatchDisable">批量禁用</view>
+          <view v-if="selectedIds.length && userStore.hasPermission('user:update')" class="t-btn t-btn-outline" @click.stop="handleBatchEnable">批量启用</view>
+          <view v-if="selectedIds.length && userStore.hasPermission('user:update')" class="t-btn t-btn-danger"  @click.stop="handleBatchDisable">批量禁用</view>
         </view>
         <view class="toolbar-right">
           <view class="icon-btn" @click="loadList">🔄</view>
@@ -286,7 +289,7 @@ onMounted(loadList)
           <view class="td" style="flex:1.2">
             <view class="action-btns">
               <view class="act-btn act-view" @click.stop="openDetail(row.id)">详情</view>
-              <view class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
+              <view v-if="userStore.hasPermission('user:update')" class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
               <view class="act-btn act-more" @click.stop="(e) => openMoreMenu(e as MouseEvent, row)">···</view>
             </view>
           </view>
@@ -309,7 +312,7 @@ onMounted(loadList)
       <view v-if="moreMenuRow.certStatus !== 'certified'" class="mm-item text-success" @click="certApprove(moreMenuRow)">🪪 通过实名认证</view>
       <view v-if="moreMenuRow.certStatus !== 'none'" class="mm-item text-warn" @click="certReject(moreMenuRow)">✖ 拒绝/撤销认证</view>
       <view class="mm-divider"/>
-      <view class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除用户</view>
+      <view v-if="userStore.hasPermission('user:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除用户</view>
     </view>
     <!-- #endif -->
 

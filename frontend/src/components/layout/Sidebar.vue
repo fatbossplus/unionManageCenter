@@ -1,39 +1,51 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useUserStore } from '@/stores/user'
 
-const collapsed = ref(false)
+const collapsed  = ref(false)
+const userStore  = useUserStore()
 
-const menus = [
-  {
-    section: '概览',
-    items: [
-      { icon: '🏠', label: '首页大屏', path: '/pages/dashboard/index' },
-    ],
-  },
-  {
-    section: '核心业务',
-    items: [
-      { icon: '👥', label: '用户管理', path: '/pages/users/index' },
-      { icon: '🏢', label: '联盟管理', path: '/pages/orgs/index' },
-      { icon: '🔐', label: '权限配置', path: '/pages/permissions/index' },
-      { icon: '📦', label: '订单中心', path: '/pages/orders/index', badge: 12 },
-    ],
-  },
-  {
-    section: '财务 & 报表',
-    items: [
-      { icon: '💰', label: '财务结算', path: '/pages/finance/index' },
-      { icon: '📊', label: '数据报表', path: '/pages/reports/index' },
-    ],
-  },
-  {
-    section: '系统',
-    items: [
-      { icon: '💬', label: '消息通知', path: '/pages/messages/index', badge: 3 },
-      { icon: '⚙️', label: '系统设置', path: '/pages/settings/index' },
-    ],
-  },
-]
+const menus = computed(() => {
+  const base = [
+    {
+      section: '概览',
+      items: [
+        { icon: '🏠', label: '首页大屏', path: '/pages/dashboard/index', perm: '' },
+      ],
+    },
+    {
+      section: '核心业务',
+      items: [
+        { icon: '👥', label: '用户管理',  path: '/pages/users/index',       perm: 'user' },
+        { icon: '🏢', label: '联盟管理',  path: '/pages/orgs/index',        perm: 'org' },
+        { icon: '🔐', label: '权限配置',  path: '/pages/permissions/index', perm: 'permission' },
+        { icon: '📦', label: '订单中心',  path: '/pages/orders/index',      perm: 'order' },
+      ],
+    },
+    {
+      section: '财务 & 报表',
+      items: [
+        { icon: '💰', label: '财务结算', path: '/pages/finance/index',  perm: 'finance' },
+        { icon: '📊', label: '数据报表', path: '/pages/reports/index',  perm: 'report' },
+      ],
+    },
+    {
+      section: '系统',
+      items: [
+        { icon: '💬', label: '消息通知',   path: '/pages/messages/index', perm: 'message' },
+        { icon: '⚙️', label: '系统设置',   path: '/pages/settings/index', perm: '' },
+        ...(userStore.hasPermission('admin:list')
+          ? [{ icon: '👤', label: '管理员管理', path: '/pages/admins/index', perm: 'admin:list' }]
+          : []),
+      ],
+    },
+  ]
+  // 过滤掉没有权限的菜单项
+  return base.map(group => ({
+    ...group,
+    items: group.items.filter(item => !item.perm || userStore.hasPermission(item.perm)),
+  })).filter(group => group.items.length > 0)
+})
 
 // #ifdef H5
 const currentPath = ref(window.location.pathname.replace('/pages', '').replace('/index.html', '') || '/pages/dashboard/index')
@@ -80,10 +92,10 @@ function navigate(path: string) {
     </scroll-view>
 
     <view class="sidebar-bottom">
-      <view class="user-av">管</view>
+      <view class="user-av">{{ userStore.info?.username?.charAt(0).toUpperCase() || '管' }}</view>
       <view v-if="!collapsed" class="user-info">
-        <text class="user-name">超级管理员</text>
-        <text class="user-role">admin@union.com</text>
+        <text class="user-name">{{ userStore.info?.username || '管理员' }}</text>
+        <text class="user-role">{{ userStore.info?.email || userStore.info?.role || '' }}</text>
       </view>
     </view>
   </view>

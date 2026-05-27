@@ -39,6 +39,10 @@
     {
       "path": "pages/settings/index",
       "style": { "navigationBarTitleText": "系统设置" }
+    },
+    {
+      "path": "pages/admins/index",
+      "style": { "navigationBarTitleText": "管理员管理" }
     }
   ],
   "globalStyle": {

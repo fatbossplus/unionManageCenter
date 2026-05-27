@@ -7,6 +7,9 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { getOrderList, refundOrder, type OrderItem } from '@/api/order'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const breadcrumbs = [{ label: '首页' }, { label: '核心业务' }, { label: '订单中心' }]
 const pageStats = reactive({ total: 0, paid: 0, pending: 0, refunded: 0, todayNew: 0 })
@@ -147,7 +150,7 @@ onMounted(loadList)
         <text class="td t-muted" style="flex:1.2">{{ row.createdAt }}</text>
         <view class="td action-btns" style="flex:1">
           <view class="act-btn act-view" @click="openDetail(row)">详情</view>
-          <view v-if="row._status === 2" class="act-btn act-edit" @click="handleRefund(row.id)">退款</view>
+          <view v-if="row._status === 2 && userStore.hasPermission('order:refund')" class="act-btn act-edit" @click="handleRefund(row.id)">退款</view>
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"

@@ -64,66 +64,76 @@ func New() *gin.Engine {
 	db := database.Get()
 	secured.Use(middleware.OperationLog(db))
 
-	{
-		// 管理员账号管理（admins 表）
-		adm := handler.NewAdminHandler()
-		secured.GET("/admins", adm.List)
-		secured.GET("/admins/me", adm.Me)
-		secured.GET("/admins/:id", adm.Get)
-		secured.POST("/admins", adm.Create)
-		secured.PUT("/admins/:id", adm.Update)
-		secured.DELETE("/admins/:id", adm.Delete)
-		secured.POST("/admins/:id/reset-password", adm.ResetPassword)
-		secured.GET("/users/me", adm.Me) // 兼容旧路径
+	// 权限校验快捷函数
+	perm := func(code string) gin.HandlerFunc {
+		return middleware.RequirePermission(db, code)
+	}
 
-		// 平台用户管理（users 表）
+	{
+		// 当前管理员权限码列表（前端初始化用）
+		secured.GET("/auth/permissions", middleware.GetPermissions(db))
+		secured.GET("/auth/menus", authH.Menus)
+		secured.POST("/auth/logout", authH.Logout)
+
+		// 管理员账号管理（仅 superadmin）
+		adm := handler.NewAdminHandler()
+		secured.GET("/admins", perm("admin:list"), adm.List)
+		secured.GET("/admins/me", adm.Me)
+		secured.GET("/admins/:id", perm("admin:list"), adm.Get)
+		secured.POST("/admins", perm("admin:create"), adm.Create)
+		secured.PUT("/admins/:id", perm("admin:update"), adm.Update)
+		secured.DELETE("/admins/:id", perm("admin:delete"), adm.Delete)
+		secured.POST("/admins/:id/reset-password", perm("admin:update"), adm.ResetPassword)
+		secured.GET("/users/me", adm.Me)
+
+		// 平台用户管理
 		u := handler.NewUserHandler()
 		secured.GET("/users", u.List)
 		secured.GET("/users/:id", u.Get)
-		secured.POST("/users", u.Create)
-		secured.PUT("/users/:id", u.Update)
-		secured.DELETE("/users/:id", u.Delete)
-		secured.POST("/users/batch-enable", u.BatchEnable)
-		secured.POST("/users/batch-disable", u.BatchDisable)
+		secured.POST("/users", perm("user:create"), u.Create)
+		secured.PUT("/users/:id", perm("user:update"), u.Update)
+		secured.DELETE("/users/:id", perm("user:delete"), u.Delete)
+		secured.POST("/users/batch-enable", perm("user:update"), u.BatchEnable)
+		secured.POST("/users/batch-disable", perm("user:update"), u.BatchDisable)
 
-		// 角色 & 权限
+		// 角色 & 权限（仅 superadmin 可改）
 		ro := handler.NewRoleHandler()
 		secured.GET("/roles", ro.List)
-		secured.POST("/roles", ro.Create)
-		secured.PUT("/roles/:id", ro.Update)
-		secured.DELETE("/roles/:id", ro.Delete)
-		secured.PUT("/roles/:id/permissions", ro.AssignPermissions)
+		secured.POST("/roles", perm("permission"), ro.Create)
+		secured.PUT("/roles/:id", perm("permission"), ro.Update)
+		secured.DELETE("/roles/:id", perm("permission"), ro.Delete)
+		secured.PUT("/roles/:id/permissions", perm("permission"), ro.AssignPermissions)
 
 		pm := handler.NewPermissionHandler()
 		secured.GET("/permissions", pm.Tree)
-		secured.POST("/permissions", pm.Create)
-		secured.PUT("/permissions/:id", pm.Update)
-		secured.DELETE("/permissions/:id", pm.Delete)
+		secured.POST("/permissions", perm("permission"), pm.Create)
+		secured.PUT("/permissions/:id", perm("permission"), pm.Update)
+		secured.DELETE("/permissions/:id", perm("permission"), pm.Delete)
 
 		// 联盟
 		og := handler.NewOrgHandler()
 		secured.GET("/orgs", og.List)
 		secured.GET("/orgs/:id", og.Get)
-		secured.POST("/orgs", og.Create)
-		secured.PUT("/orgs/:id", og.Update)
-		secured.DELETE("/orgs/:id", og.Delete)
+		secured.POST("/orgs", perm("org:create"), og.Create)
+		secured.PUT("/orgs/:id", perm("org:update"), og.Update)
+		secured.DELETE("/orgs/:id", perm("org:delete"), og.Delete)
 		secured.GET("/orgs/:id/members", og.Members)
-		secured.POST("/orgs/:id/members", og.AddMember)
-		secured.DELETE("/orgs/:id/members/:uid", og.RemoveMember)
+		secured.POST("/orgs/:id/members", perm("org:update"), og.AddMember)
+		secured.DELETE("/orgs/:id/members/:uid", perm("org:update"), og.RemoveMember)
 
 		// 订单
 		od := handler.NewOrderHandler()
 		secured.GET("/orders", od.List)
 		secured.GET("/orders/:id", od.Get)
-		secured.POST("/orders/:id/refund", od.Refund)
+		secured.POST("/orders/:id/refund", perm("order:refund"), od.Refund)
 
 		// 财务
 		fi := handler.NewFinanceHandler()
 		secured.GET("/finance", fi.List)
 		secured.GET("/finance/:id", fi.Get)
-		secured.POST("/finance/:id/settle", fi.Settle)
+		secured.POST("/finance/:id/settle", perm("finance:settle"), fi.Settle)
 		secured.GET("/finance/accounts", fi.ListAccounts)
-		secured.POST("/finance/accounts", fi.CreateAccount)
+		secured.POST("/finance/accounts", perm("finance:settle"), fi.CreateAccount)
 
 		// 消息
 		msg := handler.NewMessageHandler()
@@ -143,10 +153,6 @@ func New() *gin.Engine {
 		secured.GET("/reports/summary", rpt.Summary)
 		secured.GET("/reports/daily", rpt.Daily)
 		secured.GET("/reports/roles", rpt.RoleStats)
-
-		// 认证辅助
-		secured.GET("/auth/menus", authH.Menus)
-		secured.POST("/auth/logout", authH.Logout)
 	}
 
 	return r

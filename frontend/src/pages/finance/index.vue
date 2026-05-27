@@ -7,6 +7,9 @@ import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { getFinanceList, settleFinance } from '@/api/finance'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const breadcrumbs = [{ label: '首页' }, { label: '财务 & 报表' }, { label: '财务结算' }]
 const pageStats = reactive({ total: 0, done: 0, pending: 0, processing: 0, totalAmount: 0 })
@@ -135,7 +138,7 @@ onMounted(loadList)
         <text class="td t-muted" style="flex:1.1">{{ row.settledAt || '—' }}</text>
         <view class="td action-btns" style="flex:1">
           <view class="act-btn act-view" @click="openDetail(row)">详情</view>
-          <view v-if="row._status === 1" class="act-btn act-edit" @click="handleSettle(row.id)">结算</view>
+          <view v-if="row._status === 1 && userStore.hasPermission('finance:settle')" class="act-btn act-edit" @click="handleSettle(row.id)">结算</view>
         </view>
       </view>
       <Pagination :total="total" :page="page" :page-size="pageSize"
@@ -170,7 +173,7 @@ onMounted(loadList)
         </view>
         <view class="modal-footer">
           <view class="m-btn m-btn-cancel" @click="showDetailModal = false">关闭</view>
-          <view v-if="detailRow._status === 1" class="m-btn m-btn-primary"
+          <view v-if="detailRow._status === 1 && userStore.hasPermission('finance:settle')" class="m-btn m-btn-primary"
             @click="() => { showDetailModal = false; handleSettle(detailRow!.id) }">立即结算</view>
         </view>
       </view>

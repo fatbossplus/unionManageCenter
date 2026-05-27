@@ -339,19 +339,43 @@ INSERT INTO `permissions` (`id`, `parent_id`, `name`, `code`, `type`, `path`, `i
 (7,  0, '数据报表', 'report',      1, '/pages/reports/index',     '📊', 6, 1),
 (8,  0, '消息通知', 'message',     1, '/pages/messages/index',    '💬', 7, 1),
 (9,  0, '系统设置', 'settings',    1, '/pages/settings/index',    '⚙️', 8, 1),
--- 按钮权限
-(10, 2, '用户新增', 'user:create', 2, '', '', 0, 0),
-(11, 2, '用户编辑', 'user:update', 2, '', '', 1, 0),
-(12, 2, '用户删除', 'user:delete', 2, '', '', 2, 0),
-(14, 3, '联盟新增', 'org:create',  2, '', '', 0, 0),
-(15, 3, '联盟编辑', 'org:update',  2, '', '', 1, 0),
-(16, 3, '联盟删除', 'org:delete',  2, '', '', 2, 0),
-(17, 5, '订单退款', 'order:refund',2, '', '', 0, 0),
-(18, 6, '发起结算', 'finance:settle',2,'','', 0, 0);
+-- 按钮权限（用户模块）
+(10, 2, '用户新增', 'user:create',  2, '', '', 0, 0),
+(11, 2, '用户编辑', 'user:update',  2, '', '', 1, 0),
+(12, 2, '用户删除', 'user:delete',  2, '', '', 2, 0),
+-- 按钮权限（联盟模块）
+(14, 3, '联盟新增', 'org:create',   2, '', '', 0, 0),
+(15, 3, '联盟编辑', 'org:update',   2, '', '', 1, 0),
+(16, 3, '联盟删除', 'org:delete',   2, '', '', 2, 0),
+-- 按钮权限（订单/财务）
+(17, 5, '订单退款', 'order:refund', 2, '', '', 0, 0),
+(18, 6, '发起结算', 'finance:settle',2,'','', 0, 0),
+-- 管理员管理（系统级，仅 superadmin）
+(19, 9, '管理员列表', 'admin:list',   2, '', '', 0, 0),
+(20, 9, '管理员新增', 'admin:create', 2, '', '', 1, 0),
+(21, 9, '管理员编辑', 'admin:update', 2, '', '', 2, 0),
+(22, 9, '管理员删除', 'admin:delete', 2, '', '', 3, 0);
 
 -- 超级管理员拥有所有权限
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT 1, id FROM `permissions`;
+
+-- 联盟管理员：用户/联盟的读写，无删除，无管理员管理
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT 2, id FROM `permissions`
+WHERE code IN ('dashboard','user','org','order','message',
+               'user:create','user:update','org:create','org:update','order:refund');
+
+-- 财务人员：财务/报表/消息读写
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT 3, id FROM `permissions`
+WHERE code IN ('dashboard','finance','report','message','finance:settle');
+
+-- 运营人员：用户/联盟/订单查看，用户/联盟编辑
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT 4, id FROM `permissions`
+WHERE code IN ('dashboard','user','org','order','message',
+               'user:create','user:update','org:create','org:update');
 
 -- 数据字典
 INSERT INTO `dict_types` (`name`, `code`, `description`) VALUES
