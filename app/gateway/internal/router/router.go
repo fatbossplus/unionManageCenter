@@ -115,11 +115,20 @@ func New() *gin.Engine {
 		secured.GET("/orgs", og.List)
 		secured.GET("/orgs/:id", og.Get)
 		secured.POST("/orgs", perm("org:create"), og.Create)
-		secured.PUT("/orgs/:id", perm("org:update"), og.Update)
-		secured.DELETE("/orgs/:id", perm("org:delete"), og.Delete)
+		// 写操作：全局权限 OR 本联盟权限班子成员
+		orgPerm := func(code string) gin.HandlerFunc {
+			return middleware.RequireOrgPermission(db, code, "id")
+		}
+		secured.PUT("/orgs/:id", orgPerm("org:update"), og.Update)
+		secured.DELETE("/orgs/:id", orgPerm("org:delete"), og.Delete)
 		secured.GET("/orgs/:id/members", og.Members)
-		secured.POST("/orgs/:id/members", perm("org:update"), og.AddMember)
-		secured.DELETE("/orgs/:id/members/:uid", perm("org:update"), og.RemoveMember)
+		secured.POST("/orgs/:id/members", orgPerm("org:update"), og.AddMember)
+		secured.DELETE("/orgs/:id/members/:uid", orgPerm("org:update"), og.RemoveMember)
+		// 权限班子管理（仅全局 org:update 或 superadmin）
+		secured.GET("/orgs/:id/team", og.ListOrgAdmins)
+		secured.POST("/orgs/:id/team", perm("org:update"), og.AddOrgAdmin)
+		secured.PUT("/orgs/:id/team/:admin_id", perm("org:update"), og.UpdateOrgAdmin)
+		secured.DELETE("/orgs/:id/team/:admin_id", perm("org:update"), og.RemoveOrgAdmin)
 
 		// 订单
 		od := handler.NewOrderHandler()

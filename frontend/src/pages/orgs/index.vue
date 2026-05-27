@@ -6,7 +6,7 @@ import FilterPanel from '@/components/common/FilterPanel.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { getOrgList, createOrg, updateOrg, deleteOrg, type OrgItem } from '@/api/org'
-import { get, post, del } from '@/api/request'
+import { get, post, put, del } from '@/api/request'
 import type { FilterField, QuickTag } from '@/components/common/FilterPanel.vue'
 import { useUserStore } from '@/stores/user'
 
@@ -166,6 +166,79 @@ function openMoreMenu(e: MouseEvent, row: any) {
 }
 function closeMoreMenu() { moreMenuRow.value = null }
 
+// ══════════════════════════════════════════
+// 权限班子 Modal
+// ══════════════════════════════════════════
+const showTeamModal   = ref(false)
+const teamOrg         = ref<any>(null)
+const team            = ref<any[]>([])
+const teamLoading     = ref(false)
+const allAdmins       = ref<any[]>([])
+const allRoles        = ref<any[]>([])
+const addTeamAdminId  = ref<number|null>(null)
+const addTeamRoleId   = ref<number>(4)
+const addTeamRemark   = ref('')
+const teamSaving      = ref(false)
+
+async function openTeam(row: any) {
+  teamOrg.value = row
+  showTeamModal.value = true
+  teamLoading.value = true
+  try {
+    const [t, admins, roles]: any[] = await Promise.all([
+      get(`/orgs/${row.id}/team`),
+      get('/admins', { page: 1, page_size: 100 }),
+      get('/roles'),
+    ])
+    team.value      = Array.isArray(t) ? t : (t.list || [])
+    allAdmins.value = admins?.list || []
+    allRoles.value  = Array.isArray(roles) ? roles : (roles?.list || roles || [])
+    addTeamAdminId.value = null
+    addTeamRoleId.value  = allRoles.value.find((r: any) => r.code === 'operator')?.id || 4
+    addTeamRemark.value  = ''
+  } catch { team.value = [] }
+  finally { teamLoading.value = false }
+}
+
+async function addTeamMember() {
+  if (!addTeamAdminId.value) { uni.showToast({ title: '请选择管理员', icon: 'none' }); return }
+  teamSaving.value = true
+  try {
+    await post(`/orgs/${teamOrg.value.id}/team`, {
+      admin_id: addTeamAdminId.value, role_id: addTeamRoleId.value, remark: addTeamRemark.value
+    })
+    uni.showToast({ title: '已加入权限班子', icon: 'success' })
+    openTeam(teamOrg.value)
+  } catch (e: any) { uni.showToast({ title: e?.message || '添加失败', icon: 'none' }) }
+  finally { teamSaving.value = false }
+}
+
+async function updateTeamRole(m: any, newRoleId: number) {
+  try {
+    await put(`/orgs/${teamOrg.value.id}/team/${m.admin_id}`, { role_id: newRoleId })
+    m.role_id = newRoleId
+    m.role = allRoles.value.find((r: any) => r.id === newRoleId)
+    uni.showToast({ title: '角色已更新', icon: 'success' })
+  } catch (e: any) { uni.showToast({ title: e?.message || '更新失败', icon: 'none' }) }
+}
+
+async function removeTeamMember(m: any) {
+  uni.showModal({ title: '确认移除', content: `确认将「${m.admin?.username}」从权限班子中移除？`,
+    success: async (res) => {
+      if (!res.confirm) return
+      try {
+        await del(`/orgs/${teamOrg.value.id}/team/${m.admin_id}`)
+        uni.showToast({ title: '已移除', icon: 'success' })
+        openTeam(teamOrg.value)
+      } catch (e: any) { uni.showToast({ title: e?.message || '移除失败', icon: 'none' }) }
+    }
+  })
+}
+
+const roleColors: Record<string, string> = {
+  superadmin: '#ef4444', org_admin: '#3b82f6', finance: '#10b981', operator: '#f59e0b'
+}
+
 async function handleDelete(row: any) {
   closeMoreMenu()
   uni.showModal({ title: '确认删除', content: `确认删除联盟「${row.name}」？此操作不可逆。`, success: async (res) => {
@@ -226,7 +299,7 @@ onMounted(loadList)
           <text class="td t-muted" style="flex:1">{{ row.createdAt.slice(0,10) }}</text>
           <view class="td action-btns" style="flex:1.3">
             <view class="act-btn act-view" @click.stop="openMembers(row)">成员</view>
-            <view v-if="userStore.hasPermission('org:update')" class="act-btn act-edit" @click.stop="openEdit(row)">编辑</view>
+            <view class="act-btn act-team" @click.stop="openTeam(row)">权限班子</view>
             <view class="act-btn act-more" @click.stop="(e) => openMoreMenu(e as MouseEvent, row)">···</view>
           </view>
         </view>
@@ -239,8 +312,9 @@ onMounted(loadList)
     <!-- 更多菜单 -->
     <!-- #ifdef H5 -->
     <view v-if="moreMenuRow" class="more-menu" :style="moreMenuStyle" @click.stop>
-      <view class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()">✏️ 编辑联盟</view>
+      <view v-if="userStore.hasPermission('org:update')" class="mm-item" @click="openEdit(moreMenuRow); closeMoreMenu()">✏️ 编辑联盟</view>
       <view class="mm-item" @click="openMembers(moreMenuRow); closeMoreMenu()">👥 成员管理</view>
+      <view class="mm-item" @click="openTeam(moreMenuRow); closeMoreMenu()">🔐 权限班子</view>
       <view class="mm-divider"/>
       <view v-if="userStore.hasPermission('org:delete')" class="mm-item text-danger" @click="handleDelete(moreMenuRow)">🗑 删除联盟</view>
     </view>
@@ -336,6 +410,109 @@ onMounted(loadList)
         </view>
       </view>
     </view>
+    <!-- 权限班子 Modal -->
+    <view v-if="showTeamModal" class="modal-mask" @click.self="showTeamModal = false">
+      <view class="modal-box modal-xl">
+        <view class="modal-header">
+          <view>
+            <text class="modal-title">🔐 权限班子 · {{ teamOrg?.name }}</text>
+            <text class="modal-sub">为该联盟指定专属管理员，班子成员可对本联盟进行操作管理</text>
+          </view>
+          <text class="modal-close" @click="showTeamModal = false">✕</text>
+        </view>
+        <view class="modal-body">
+
+          <!-- 添加成员栏 -->
+          <view v-if="userStore.hasPermission('org:update')" class="team-add-bar">
+            <text class="team-add-title">添加成员</text>
+            <view class="team-add-row">
+              <select class="form-select flex1" v-model="addTeamAdminId">
+                <option :value="null">-- 选择管理员 --</option>
+                <option v-for="a in allAdmins" :key="a.id" :value="a.id">
+                  {{ a.username }}{{ a.real_name ? ' (' + a.real_name + ')' : '' }}
+                </option>
+              </select>
+              <select class="form-select" v-model="addTeamRoleId">
+                <option v-for="r in allRoles.filter((r:any) => r.code !== 'superadmin')" :key="r.id" :value="r.id">
+                  {{ r.name }}
+                </option>
+              </select>
+              <input class="form-input" style="flex:1.5" v-model="addTeamRemark" placeholder="备注（选填）"/>
+              <view class="m-btn m-btn-primary" :class="{loading: teamSaving}" @click="addTeamMember">
+                {{ teamSaving ? '添加中...' : '＋ 加入班子' }}
+              </view>
+            </view>
+          </view>
+
+          <!-- 成员列表 -->
+          <view v-if="teamLoading" class="table-empty">加载中...</view>
+          <view v-else>
+            <view class="team-empty" v-if="!team.length">
+              <text class="team-empty-icon">👥</text>
+              <text class="team-empty-text">该联盟暂无权限班子，请添加管理员</text>
+            </view>
+            <view v-else>
+              <view class="team-head">
+                <text style="flex:1.5">管理员账号</text>
+                <text style="flex:1">当前角色</text>
+                <text style="flex:1">调整角色</text>
+                <text style="flex:1.5">备注</text>
+                <text style="flex:0.8">操作</text>
+              </view>
+              <view v-for="m in team" :key="m.id" class="team-row">
+                <!-- 头像 + 账号 -->
+                <view style="flex:1.5;display:flex;align-items:center;gap:8px">
+                  <view class="t-avatar"
+                    :style="{ background: roleColors[m.admin?.role_id] || '#6366f1' }">
+                    {{ m.admin?.username?.charAt(0)?.toUpperCase() || '?' }}
+                  </view>
+                  <view>
+                    <text class="t-name">{{ m.admin?.username || '—' }}</text>
+                    <text class="t-email">{{ m.admin?.real_name || m.admin?.email || '' }}</text>
+                  </view>
+                </view>
+                <!-- 当前角色 -->
+                <view style="flex:1">
+                  <view class="role-badge"
+                    :style="{ background: (roleColors[m.role?.code]||'#6366f1')+'22', color: roleColors[m.role?.code]||'#6366f1' }">
+                    {{ m.role?.name || '—' }}
+                  </view>
+                </view>
+                <!-- 调整角色 -->
+                <view style="flex:1">
+                  <select class="form-select-sm"
+                    :value="m.role_id"
+                    @change="(e:any) => updateTeamRole(m, Number(e.target.value))">
+                    <option v-for="r in allRoles.filter((r:any) => r.code !== 'superadmin')" :key="r.id" :value="r.id">
+                      {{ r.name }}
+                    </option>
+                  </select>
+                </view>
+                <!-- 备注 -->
+                <text class="t-muted" style="flex:1.5">{{ m.remark || '—' }}</text>
+                <!-- 操作 -->
+                <view style="flex:0.8">
+                  <view v-if="userStore.hasPermission('org:update')"
+                        class="act-btn act-danger" @click="removeTeamMember(m)">移除</view>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 权限说明 -->
+          <view class="team-tips">
+            <text class="tips-title">📌 权限班子说明</text>
+            <text class="tips-item">· 权限班子成员可对本联盟进行编辑、成员管理等操作，无需全局权限</text>
+            <text class="tips-item">· 角色决定成员在本联盟内的权限范围（与全局RBAC角色定义一致）</text>
+            <text class="tips-item">· superadmin 无需加入班子，默认拥有所有联盟的管理权限</text>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <text class="footer-info">共 {{ team.length }} 位班子成员</text>
+          <view class="m-btn m-btn-cancel" @click="showTeamModal = false">关闭</view>
+        </view>
+      </view>
+    </view>
     <!-- #endif -->
   </AppLayout>
 </template>
@@ -389,4 +566,26 @@ onMounted(loadList)
 .add-member-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--color-border-light); }
 .mem-head { display: flex; padding: 8px 0; border-bottom: 1px solid var(--color-border-light); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); }
 .mem-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--color-border-light); font-size: 13px; color: var(--color-text-primary); &:last-child { border: none; } }
+/* 权限班子 */
+.modal-xl { width: 760px; }
+.modal-sub { display: block; font-size: 12px; color: var(--color-text-muted); margin-top: 3px; }
+.act-team { background: #f5f3ff; color: #7c3aed; }
+.team-add-bar { background: var(--color-border-light); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
+.team-add-title { font-size: 13px; font-weight: 600; color: var(--color-text-secondary); display: block; margin-bottom: 10px; }
+.team-add-row { display: flex; gap: 10px; align-items: center; }
+.flex1 { flex: 1; }
+.team-head { display: flex; padding: 9px 4px; border-bottom: 1px solid var(--color-border-light); font-size: 12px; font-weight: 600; color: var(--color-text-secondary); }
+.team-row { display: flex; align-items: center; padding: 12px 4px; border-bottom: 1px solid var(--color-border-light); font-size: 13px; &:last-child { border: none; } }
+.t-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold; flex-shrink: 0; }
+.t-name { font-size: 13px; font-weight: 600; display: block; }
+.t-email { font-size: 11px; color: var(--color-text-muted); display: block; }
+.role-badge { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+.form-select-sm { height: 32px; border: 1.5px solid var(--color-border); border-radius: 6px; padding: 0 8px; font-size: 12px; background: var(--color-card-bg); color: var(--color-text-primary); width: 100%; }
+.team-empty { padding: 40px; text-align: center; }
+.team-empty-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.team-empty-text { font-size: 13px; color: var(--color-text-muted); display: block; }
+.team-tips { margin-top: 20px; background: #eff6ff; border-radius: 8px; padding: 12px 16px; border-left: 3px solid #3b82f6; }
+.tips-title { font-size: 13px; font-weight: 600; color: #1e40af; display: block; margin-bottom: 6px; }
+.tips-item { font-size: 12px; color: #3b82f6; display: block; line-height: 1.8; }
+.footer-info { font-size: 13px; color: var(--color-text-muted); flex: 1; }
 </style>

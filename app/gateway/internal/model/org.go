@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Org struct {
 	Base
@@ -32,3 +34,18 @@ type OrgMember struct {
 }
 
 func (OrgMember) TableName() string { return "org_members" }
+
+// OrgAdmin 联盟管理员（权限班子）—— 将后台管理员关联到某个联盟并赋予角色
+type OrgAdmin struct {
+	Base
+	OrgID   uint64 `gorm:"index;not null"   json:"org_id"`
+	AdminID uint64 `gorm:"index;not null"   json:"admin_id"`
+	RoleID  uint   `gorm:"not null;default:4" json:"role_id"`
+	Status  int8   `gorm:"default:1"        json:"status"`
+	Remark  string `gorm:"size:256"         json:"remark"`
+	// 关联预加载
+	Admin *Admin `gorm:"foreignKey:AdminID" json:"admin,omitempty"`
+	Role  *Role  `gorm:"foreignKey:RoleID"  json:"role,omitempty"`
+}
+
+func (OrgAdmin) TableName() string { return "org_admins" }

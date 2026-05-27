@@ -134,3 +134,80 @@ func (h *OrgHandler) RemoveMember(c *gin.Context) {
 	h.db.Model(&model.Org{}).Where("id = ?", id).UpdateColumn("member_count", gorm.Expr("GREATEST(member_count - 1, 0)"))
 	response.OKMsg(c, "已移除")
 }
+
+// ── 权限班子（OrgAdmin）─────────────────────────────────
+
+// ListOrgAdmins GET /orgs/:id/team — 查询联盟权限班子
+func (h *OrgHandler) ListOrgAdmins(c *gin.Context) {
+	orgID, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	var list []model.OrgAdmin
+	h.db.Preload("Admin").Preload("Role").
+		Where("org_id = ? AND deleted_at IS NULL", orgID).
+		Order("created_at ASC").Find(&list)
+	response.OK(c, list)
+}
+
+// AddOrgAdmin POST /orgs/:id/team — 添加管理员到权限班子
+func (h *OrgHandler) AddOrgAdmin(c *gin.Context) {
+	orgID, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	var req struct {
+		AdminID uint64 `json:"admin_id" binding:"required"`
+		RoleID  uint   `json:"role_id"  binding:"required"`
+		Remark  string `json:"remark"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, err.Error())
+		return
+	}
+
+	// 检查联盟是否存在
+	var count int64
+	h.db.Model(&model.Org{}).Where("id = ? AND deleted_at IS NULL", orgID).Count(&count)
+	if count == 0 {
+		response.Fail(c, 404, "联盟不存在")
+		return
+	}
+
+	oa := model.OrgAdmin{OrgID: orgID, AdminID: req.AdminID, RoleID: req.RoleID, Status: 1, Remark: req.Remark}
+	if err := h.db.Create(&oa).Error; err != nil {
+		response.Fail(c, 500, "添加失败: "+err.Error())
+		return
+	}
+	h.db.Preload("Admin").Preload("Role").First(&oa, oa.ID)
+	response.OK(c, oa)
+}
+
+// UpdateOrgAdmin PUT /orgs/:id/team/:admin_id — 调整角色或备注
+func (h *OrgHandler) UpdateOrgAdmin(c *gin.Context) {
+	orgID, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	adminID, _ := strconv.ParseUint(c.Param("admin_id"), 10, 64)
+	var req struct {
+		RoleID uint   `json:"role_id"`
+		Status int8   `json:"status"`
+		Remark string `json:"remark"`
+	}
+	c.ShouldBindJSON(&req)
+
+	updates := map[string]any{}
+	if req.RoleID > 0 {
+		updates["role_id"] = req.RoleID
+	}
+	if req.Status == 0 || req.Status == 1 {
+		updates["status"] = req.Status
+	}
+	updates["remark"] = req.Remark
+
+	h.db.Model(&model.OrgAdmin{}).
+		Where("org_id = ? AND admin_id = ? AND deleted_at IS NULL", orgID, adminID).
+		Updates(updates)
+	response.OKMsg(c, "更新成功")
+}
+
+// RemoveOrgAdmin DELETE /orgs/:id/team/:admin_id — 从权限班子移除
+func (h *OrgHandler) RemoveOrgAdmin(c *gin.Context) {
+	orgID, _ := strconv.ParseUint(c.Param("id"), 10, 64)
+	adminID, _ := strconv.ParseUint(c.Param("admin_id"), 10, 64)
+	h.db.Where("org_id = ? AND admin_id = ? AND deleted_at IS NULL", orgID, adminID).
+		Delete(&model.OrgAdmin{})
+	response.OKMsg(c, "已移除")
+}

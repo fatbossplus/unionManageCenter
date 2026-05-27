@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
@@ -89,6 +90,51 @@ func RequirePermission(db *gorm.DB, permCode string) gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+// RequireOrgPermission 联盟级别写操作权限校验。
+// 通过条件（满足其一即可）：
+//  1. superadmin
+//  2. 拥有全局权限码（permCode，如 org:update）
+//  3. 在目标联盟的 org_admins 表中有记录（且 status=1）
+//
+// orgIDParam 为 Gin 路径参数名，如 "id"（对应 /orgs/:id）
+func RequireOrgPermission(db *gorm.DB, permCode string, orgIDParam string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roleCode := GetRoleCode(c)
+		if roleCode == "superadmin" {
+			c.Next()
+			return
+		}
+
+		adminID := GetUserID(c)
+
+		// 先检查全局权限
+		var roleID uint64
+		db.Table("admins").Select("role_id").
+			Where("id = ? AND deleted_at IS NULL", adminID).Scan(&roleID)
+		codes := permCache.load(db, roleID)
+		if _, ok := codes[permCode]; ok {
+			c.Next()
+			return
+		}
+
+		// 再检查是否为该联盟的权限班子成员
+		orgID, err := strconv.ParseUint(c.Param(orgIDParam), 10, 64)
+		if err == nil && orgID > 0 {
+			var cnt int64
+			db.Table("org_admins").
+				Where("org_id = ? AND admin_id = ? AND status = 1 AND deleted_at IS NULL",
+					orgID, adminID).Count(&cnt)
+			if cnt > 0 {
+				c.Next()
+				return
+			}
+		}
+
+		response.Forbidden(c)
+		c.Abort()
 	}
 }
 

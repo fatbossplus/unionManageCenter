@@ -167,6 +167,25 @@ CREATE TABLE IF NOT EXISTS `org_members` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联盟成员表';
 
 -- ============================================================
+-- 联盟管理员（权限班子）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `org_admins` (
+  `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `org_id`     BIGINT UNSIGNED NOT NULL                COMMENT '联盟ID',
+  `admin_id`   BIGINT UNSIGNED NOT NULL                COMMENT '管理员ID',
+  `role_id`    INT    UNSIGNED NOT NULL DEFAULT 4       COMMENT '在该联盟内的角色ID',
+  `status`     TINYINT(1)      NOT NULL DEFAULT 1       COMMENT '状态 1正常 0禁用',
+  `remark`     VARCHAR(256)    NOT NULL DEFAULT ''      COMMENT '备注',
+  `created_at` DATETIME(3)                              COMMENT '创建时间',
+  `updated_at` DATETIME(3)                              COMMENT '更新时间',
+  `deleted_at` DATETIME(3)                              COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_org_admin` (`org_id`, `admin_id`, `deleted_at`),
+  KEY `idx_org_id`   (`org_id`),
+  KEY `idx_admin_id` (`admin_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联盟管理员（权限班子）';
+
+-- ============================================================
 -- 订单表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS `orders` (
