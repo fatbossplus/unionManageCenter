@@ -66,7 +66,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		"user": gin.H{
 			"id":        user.ID,
 			"username":  user.Username,
-			"email":     user.Email,
+			"email":     func() string { if user.Email != nil { return *user.Email }; return "" }(),
 			"real_name": user.RealName,
 			"avatar":    user.Avatar,
 			"role":      roleCode,

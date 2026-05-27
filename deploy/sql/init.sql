@@ -3,6 +3,11 @@
 -- Database: union_manage
 -- Charset: utf8mb4
 -- ============================================================
+-- 导入前确保连接编码为 utf8mb4，避免中文注释乱码
+SET NAMES utf8mb4;
+SET character_set_client     = utf8mb4;
+SET character_set_connection = utf8mb4;
+SET character_set_results    = utf8mb4;
 
 CREATE DATABASE IF NOT EXISTS `union_manage`
   DEFAULT CHARACTER SET utf8mb4
@@ -17,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id`           BIGINT       UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
   `username`     VARCHAR(64)  NOT NULL COMMENT '用户名',
   `password`     VARCHAR(128) NOT NULL COMMENT '密码(bcrypt)',
-  `email`        VARCHAR(128) NOT NULL DEFAULT '' COMMENT '邮箱',
+  `email`        VARCHAR(128) NULL     DEFAULT NULL COMMENT '邮箱',
   `phone`        VARCHAR(20)  NOT NULL DEFAULT '' COMMENT '手机号',
   `real_name`    VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '真实姓名',
   `avatar`       VARCHAR(256) NOT NULL DEFAULT '' COMMENT '头像URL',
